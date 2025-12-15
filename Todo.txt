@@ -1,2 +1,6 @@
 CNN processing
 mmPose MediaPipe foreign, OpenPose - skeleton to denoise bg
+
+
+https://theanalyticslab.nl/bridging-the-gap-how-ai-translates-sign-language-into-speech/
+https://go-ming.tistory.com/4
