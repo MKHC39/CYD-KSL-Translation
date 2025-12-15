@@ -12,3 +12,4 @@
 ## Resource
 - https://theanalyticslab.nl/bridging-the-gap-how-ai-translates-sign-language-into-speech/
 - https://go-ming.tistory.com/4
+- https://arxiv.org/pdf/2204.03328

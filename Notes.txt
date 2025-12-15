@@ -1,0 +1,18 @@
+CNN processing
+mmPose MediaPipe foreign, OpenPose - skeleton to denoise bg
+
+
+https://theanalyticslab.nl/bridging-the-gap-how-ai-translates-sign-language-into-speech/
+https://go-ming.tistory.com/4
+
+Preprocessing:
+Performance of SLR system enhanced through dimension reduction, normalization and noise removal.
+
+Segmentation:
+Split into various Region of Interest (RoI)
+
+Tracking:
+Tracking of hand and facce
+
+Feature Extraction:
+Transforming Processed input data into feature space
