@@ -8,6 +8,7 @@
 ## Dataset
 - https://aclanthology.org/2022.sltat-1.9.pdf
 - https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=103
+- https://www.kaggle.com/datasets?search=sign+language
 
 ## Resource
 - https://theanalyticslab.nl/bridging-the-gap-how-ai-translates-sign-language-into-speech/
