@@ -2,9 +2,11 @@
 
 ## Table of Content
 - **[Papers](#papers)**
-  - [Skeleton SLR](#skeletonslr)
-  - [RGB SLR](RGB)
-
+  - [Skeleton SLR](#skeleton-slr)
+  - [RGB SLR](#rgb-slr)
+  - [KSL Papers](#ksl-papers)
+  - [Others](#others)
+  
 - **[Datasets](#datasets)**
 
 - **[Summary of Results](#Summary)**
@@ -21,7 +23,22 @@
 1. **Spatial Temporal Graph Convolutional Networks for Skeleton-Based Action Recognition** [*paper*](https://ojs.aaai.org/index.php/AAAI/article/view/12328)
 
 ### RGB SLR
+1. 
 
+### KSL Papers
+1. **딥러닝 기반 OpenPose를 이용한 한국 수화 동작 인식에 관한 연구** [*paper*](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10549905&buildDate=2025-11-11+16%3A57%3A59&nowDate=20251209_2&cdnUrl=https%3A%2F%2Fcdn.dbpia.co.kr%2Fstatic&buildTime=20251111165759&minify=.min&appVersion=1.0.0&language=ko_KR&hasTopBanner=true)
+1. **실시간 수어 AI 번역 프로그램 구현** [*paper*](http://journal.dcs.or.kr/_common/do.php?a=full&b=12&bidx=3464&aidx=38387)
+1. **미디어파이프와 장단기기억을 이용한 수화 동작인식 앱 개발** [*paper*](http://journal.dcs.or.kr/_common/do.php?a=current&b=11&bidx=3205&aidx=35772)
+1. **Deep Neural Network-Based Sign Language Translation Model with Dynamic Coordinate Compression** [*paper*](https://koreascience.kr/article/JAKO202523836005515.pdf)
+
+
+### Others
+1. A Comprehensive Study on Deep Learning-based Methods for Sign Language Recognition [*paper*](https://arxiv.org/pdf/2007.12530)
+1. A Comprehensive Review of Sign Language Recognition: Different Types, Modalities, and Datasets [*paper*](https://arxiv.org/pdf/2204.03328)
+
+## KSL Datasets?
+1. https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART002867515
+1. https://arxiv.org/pdf/1811.11436
 
 ## Datasets
 

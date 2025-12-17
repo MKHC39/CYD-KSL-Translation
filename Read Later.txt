@@ -1,6 +1,0 @@
-https://www.dbpia.co.kr/pdf/pdfView.do?nodeId=NODE10549905&width=1920
-
-
-https://www.kaggle.com/code/sayakdasgupta/sign-language-classification-cnn-99-40-accuracy - Test data?
-
-https://www.sciencedirect.com/science/article/pii/S1877050925015583?ref=pdf_download&fr=RR-2&rr=9af442e3d8e4ea2b

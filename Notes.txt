@@ -6,10 +6,9 @@ Month can't be ommitted in sign, can be in 한국어
 no vocab, only syllable transcription
 contextual differences
 
+IEEE account
+dbpia account
 
-
-https://theanalyticslab.nl/bridging-the-gap-how-ai-translates-sign-language-into-speech/
-https://go-ming.tistory.com/4
 
 Preprocessing:
 Performance of SLR system enhanced through dimension reduction, normalization and noise removal.
