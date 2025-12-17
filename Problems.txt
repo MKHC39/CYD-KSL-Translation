@@ -1,0 +1,11 @@
+CNN problems:
+
+Overlap: Frontal and behind spacial recognition
+Orientation: Cannot distinguish between index and pinky depending on front and back
+Precision/Similarity: Cannot distinguish between A and T (thumb out in fist is A, thumb squeezed between index and middle
+
+
+Gloss:
+Continuity problem: when next word starts
+Data problem: High FPS = junk data
+repositioning (hand adjustments following sign) and coarticulation (transition between sign)
