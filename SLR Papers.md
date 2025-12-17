@@ -2,12 +2,8 @@
 
 ## Table of Content
 - **[Papers](#papers)**
-  - [HMM](#hmm)
-  - [CNN+RNN](#cnnrnn)
-  - [3D CNN](#3d-cnn)
-  - [GCN](#gcn)
-  - [Others](#others)
-  - [Multi-modal](#modal)
+  - [Skeleton SLR](#skeletonslr)
+  - [RGB SLR](RGB)
 
 - **[Datasets](#datasets)**
 
@@ -18,8 +14,13 @@
 ### Skeleton SLR
 1. **Word-level Deep Sign Language Recognition from Video: A New Large-scale Dataset and Methods Comparison** [*paper*](https://arxiv.org/pdf/1910.11006)
 1. **Pose-based Sign Language Recognition using GCN and BERT** [*paper*](https://arxiv.org/pdf/2012.00781)
-1. **SignBERT: Pre-Training of Hand-Model-Aware Representation for Sign Language Recognition**[*paper*](https://arxiv.org/pdf/2110.05382)
-1. 
+1. **SignBERT: Pre-Training of Hand-Model-Aware Representation for Sign Language Recognition** [*paper*](https://arxiv.org/pdf/2110.05382)
+1. **OpenHands: Making Sign Language Recognition Accessible with Pose-based Pretrained Models across Languages** [*paper*](https://aclanthology.org/2022.acl-long.150.pdf)
+1. **Skeleton Aware Multi-modal Sign Language Recognition** [*paper*](https://arxiv.org/pdf/2103.08833)
+1. **SIGN LANGUAGE RECOGNITION BASED ON HAND AND BODY SKELETAL DATA** [*paper*](https://vcl.iti.gr/media/documents/sign-language-recognition-based-on-hand-and-body-skeletal-data.pdf)
+1. **Spatial Temporal Graph Convolutional Networks for Skeleton-Based Action Recognition** [*paper*](https://ojs.aaai.org/index.php/AAAI/article/view/12328)
+
+### RGB SLR
 
 
 ## Datasets
@@ -52,7 +53,7 @@
 | [**WLASL**](https://dxli94.github.io/WLASL/)                 | American    | 2,000   | 21,083  | Videos                       | isolated       |
 | [**NIASL2021**](https://aihub.or.kr/aihubdata/data/view.do?pageIndex=1&currMenu=115&topMenu=100&srchOptnCnd=OPTNCND001&srchDetailCnd=DETAILCND001&srchOrder=ORDER001&srchPagePer=20&searchKeyword=%EC%88%98%EC%96%B4%EB%B2%88%EC%97%AD&aihubDataSe=data&dataSetSn=103)                 | Korean    | 6,000   | 536,000  | Videos                       | mixed      |
 | [**NIASLG1?**](https://aihub.or.kr/aihubdata/data/view.do?pageIndex=1&currMenu=115&topMenu=100&srchOptnCnd=OPTNCND001&srchDetailCnd=DETAILCND001&srchOrder=ORDER001&srchPagePer=20&searchKeyword=%EC%88%98%EC%96%B4%EB%B2%88%EC%97%AD&aihubDataSe=data&dataSetSn=636)                 | Korean    | 164,375   | 201,026  | Videos                       | continuous       |
-| [**AUTSL**](https://cvml.ankara.edu.tr/datasets/)
+| [**AUTSL**](https://cvml.ankara.edu.tr/datasets/)            | Turkish     | 226     | 38,336    | Videos & Depth from Kinect  | isolated |
 
 ## Summary
 - **[Table of results](https://docs.google.com/spreadsheets/d/1GMigSrAvbKFR-B0k2Yud1iNjaEvC-MK_sDVotKH0x-M/edit?usp=sharing)**
