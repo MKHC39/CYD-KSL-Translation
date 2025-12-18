@@ -23,7 +23,15 @@
 1. **Spatial Temporal Graph Convolutional Networks for Skeleton-Based Action Recognition** [*paper*](https://ojs.aaai.org/index.php/AAAI/article/view/12328)
 
 ### RGB SLR
-1. 
+1. **A Comprehensive Study on Deep Learning-based Methods for Sign Language Recognition** [*paper*](https://arxiv.org/pdf/2007.12530)
+1. **Dynamic Sign Language Recognition Based on Video Sequence With BLSTM-3D Residual Networks** [*paper*](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8667292)
+1. **Recurrent Convolutional Neural Networks for Continuous Sign Language Recognition by Staged Optimization** [*paper*](https://openaccess.thecvf.com/content_cvpr_2017/papers/Cui_Recurrent_Convolutional_Neural_CVPR_2017_paper.pdf)
+1. **Video-Based Sign Language Recognition Without Temporal Segmentation** [*paper*](https://ojs.aaai.org/index.php/AAAI/article/view/11903)
+1. **Dilated Convolutional Network with Iterative Optimization for Continuous Sign Language Recognition** [*paper*](https://www.ijcai.org/proceedings/2018/0123.pdf)
+1. **Continuous Sign Language Recognition with Correlation Network** [*paper*](https://openaccess.thecvf.com/content/CVPR2023/papers/Hu_Continuous_Sign_Language_Recognition_With_Correlation_Network_CVPR_2023_paper.pdf)
+1. **Continuous Sign Language Recognition With Multi-Scale Spatial-Temporal Feature Enhancement** [*paper*](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10829616)
+1. **Fully Convolutional Networks for Continuous Sign Language Recognition** [*paper*](https://arxiv.org/pdf/2007.12402)
+
 
 ### KSL Papers
 1. **딥러닝 기반 OpenPose를 이용한 한국 수화 동작 인식에 관한 연구** [*paper*](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10549905&buildDate=2025-11-11+16%3A57%3A59&nowDate=20251209_2&cdnUrl=https%3A%2F%2Fcdn.dbpia.co.kr%2Fstatic&buildTime=20251111165759&minify=.min&appVersion=1.0.0&language=ko_KR&hasTopBanner=true)
