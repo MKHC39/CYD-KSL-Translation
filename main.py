@@ -1,9 +1,8 @@
-import json
-import re
-from pathlib import Path
-from preprocess.border import box_outline
+# placeholder
 
 
+
+"""
 ROOT = Path(r"C:\Users\CHOI\Downloads\KSL Word DataSet\수어 영상\1.Training\[라벨]01_real_word_keypoint\01")
 
 IMG_W = 1920
@@ -108,6 +107,7 @@ def main():
 
             print(f"[{angle}] frames_with_any_xy_zero={zero_hits}/{len(files)}")
 
+"""
 
 if __name__ == "__main__":
     main()
