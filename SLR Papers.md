@@ -43,6 +43,8 @@
 ### Others
 1. A Comprehensive Study on Deep Learning-based Methods for Sign Language Recognition [*paper*](https://arxiv.org/pdf/2007.12530)
 1. A Comprehensive Review of Sign Language Recognition: Different Types, Modalities, and Datasets [*paper*](https://arxiv.org/pdf/2204.03328)
+1. Boosting Continuous Sign Language Recognition via Cross Modality Augmentation[*paper*](https://arxiv.org/pdf/2010.05264)
+
 
 ## KSL Datasets?
 1. https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART002867515
