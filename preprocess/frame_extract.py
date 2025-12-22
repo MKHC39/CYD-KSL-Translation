@@ -24,9 +24,11 @@ def frame_index(start_f: int, end_f: int, step: int = 5) -> List[int]:
     if end_f < start_f:
         return []
 
+    if step <= 0:
+        raise ValueError(f"Invalid step reported: {step}")    # ??
+
     index = list(range(start_f, end_f + 1, step))
-    if len(index)==0:
-        return [end_f]  # ??
+
 
     if index[-1] != end_f:
         index.append(end_f)
@@ -53,33 +55,24 @@ def frame_extractor(
         raise FileNotFoundError(f"Could not open video: {video_path}")
 
     frames: List[np.ndarray] = []
-    frame_index = 0
+    curr_frame = 0
+    captured = []
 
     while True:
         ok, frame = cap.read()
         if not ok:
             break
 
-        if frame_index in keep_set:
+        if curr_frame in keep_set:
             frames.append(frame)
+            captured.append(curr_frame)
 
-        if frame_index >= max_idx:
+        if curr_frame >= max_idx:
             break
 
-        frame_index += 1
+        curr_frame += 1
 
     cap.release()
-
-    # Sanity: ensure we actually got everything we asked for (helps catch decode/length issues)
-    # This check is Inferred (engineering safety), not guaranteed necessary.
-    if len(frames) != len(xtract_index):
-        missing = [i for i in xtract_index if i not in keep_set]  # should be empty logically
-        # More useful: detect which requested indices weren't captured
-        # We can reconstruct captured indices by re-decoding with a counter if needed.
-        raise RuntimeError(
-            f"Expected {len(xtract_index)} frames, got {len(frames)}. "
-            f"Video may be shorter than requested max_idx={max_idx}."
-        )
 
     return frames
 

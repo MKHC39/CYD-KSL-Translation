@@ -1,98 +1,103 @@
-import json
 from pathlib import Path
-from typing import Tuple, List
+from typing import Iterable
 
-from frame_extract import pull_video_frames
-from border import box_outline
+import numpy as np
+import cv2
+import torch
 
-
-# ---- ROOTS (from your message) ----
-TRAIN_ROOT = Path(r"C:\Users\CHOI\Downloads\KSL Word DataSet\수어 영상\1.Training")
-
-VIDEO_ROOT = TRAIN_ROOT / r"[원천]01_real_word_video\01"
-MORPHEME_ROOT = TRAIN_ROOT / r"[라벨]01_real_word_morpheme\morpheme\01"
-KEYPOINT_ROOT = TRAIN_ROOT / r"[라벨]01_real_word_keypoint\01"
-
-IMG_W, IMG_H = 1920, 1080
-STEP = 5
+from preprocess_clip import preprocess_stem, IMAGENET_MEAN, IMAGENET_STD
 
 
-def morpheme_data(morpheme_path: Path) -> Tuple[float, float, str]:
-    """
-    Matches your sample schema:
-      {"data": [{"start": 1.743, "end": 3.103, "attributes":[{"name":"..."}]}]}
-    """
-    d = json.loads(morpheme_path.read_text(encoding="utf-8"))
-    item = d["data"][0]
-    start_s = float(item["start"])
-    end_s = float(item["end"])
-    label = str(item["attributes"][0]["name"])
-    return start_s, end_s, label
+# ---------- EDITABLE OUTPUT ROOT ----------
+PREVIEW_ROOT = Path(r"C:\Users\CHOI\Downloads\KSL Word DataSet\수어 영상\1.Training\preview_test")
 
 
-def main():
-    # ---- EDIT THIS ONLY ----
-    stem = "NIA_SL_WORD1501_REAL01_D"  # without extension
-    # ------------------------
+def write_jpg_unicode_safe(path: Path, bgr_uint8: np.ndarray, quality: int = 95) -> None:
+    ok, buf = cv2.imencode(".jpg", bgr_uint8, [int(cv2.IMWRITE_JPEG_QUALITY), int(quality)])
+    if not ok:
+        raise RuntimeError(f"cv2.imencode failed for: {path}")
+    path.write_bytes(buf.tobytes())
 
-    video_path = VIDEO_ROOT / f"{stem}.mp4"
-    morpheme_path = MORPHEME_ROOT / f"{stem}_morpheme.json"
-    keypoint_dir = KEYPOINT_ROOT / stem
 
-    if not video_path.exists():
-        raise FileNotFoundError(f"Missing video: {video_path}")
-    if not morpheme_path.exists():
-        raise FileNotFoundError(f"Missing morpheme json: {morpheme_path}")
-    if not keypoint_dir.exists():
-        raise FileNotFoundError(f"Missing keypoint folder: {keypoint_dir}")
+def denormalise_imagenet(clip: torch.Tensor) -> torch.Tensor:
+    mean = torch.tensor(IMAGENET_MEAN, dtype=torch.float32).view(1, 3, 1, 1)
+    std = torch.tensor(IMAGENET_STD, dtype=torch.float32).view(1, 3, 1, 1)
+    x = clip.detach().cpu().to(torch.float32)
+    x = x * std + mean
+    return torch.clamp(x, 0.0, 1.0)
 
-    start_s, end_s, label = morpheme_data(morpheme_path)
 
-    frames, indices, fps = pull_video_frames(video_path, start_s, end_s, step=STEP)
+def save_clip_as_jpgs(stem: str, clip_rgb01: torch.Tensor, kept_indices: list[int]) -> int:
+    out_dir = PREVIEW_ROOT / stem
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"stem: {stem}")
-    print(f"label: {label}")
-    print(f"start_s={start_s}, end_s={end_s}, step={STEP}, fps={fps}")
-    print(f"extracted_frames={len(frames)}")
-    print(f"indices (first 10): {indices[:10]}")
-    print(f"indices (last 10):  {indices[-10:]}")
+    for i, frame_idx in enumerate(kept_indices):
+        img = clip_rgb01[i].permute(1, 2, 0).numpy()  # HWC RGB float [0,1]
+        rgb_uint8 = (img * 255.0 + 0.5).astype(np.uint8)
+        bgr_uint8 = rgb_uint8[:, :, ::-1]
+        out_path = out_dir / f"{frame_idx:012d}.jpg"
+        write_jpg_unicode_safe(out_path, bgr_uint8)
 
-    if frames:
-        print(f"first_frame_shape={frames[0].shape} dtype={frames[0].dtype}")
+    return len(kept_indices)
 
-    # bbox checks for the extracted indices
-    big_area = 0
-    max_area = -1
-    max_area_info = None
 
-    # show only a few per-frame prints so output stays readable
-    PREVIEW = 5
-    preview_printed = 0
+def iter_stems(start_word: int, n_words: int, angles: Iterable[str]) -> Iterable[str]:
+    for w in range(start_word, start_word + n_words):
+        for a in angles:
+            yield f"NIA_SL_WORD{w:04d}_REAL01_{a}"
 
-    for frame_idx in indices:
-        kp_path = keypoint_dir / f"{stem}_{frame_idx:012d}_keypoints.json"
-        if not kp_path.exists():
-            raise FileNotFoundError(f"Missing keypoints json for frame {frame_idx}: {kp_path}")
 
-        x1, y1, x2, y2 = box_outline(kp_path, IMG_W, IMG_H, margin_px=20)
-        area = (x2 - x1 + 1) * (y2 - y1 + 1)
+def main(start_word: int, n_words: int, angles: Iterable[str], step: int, shift_margin_px: int, save_previews: bool, img_w: int, img_h: int) -> None:
+    PREVIEW_ROOT.mkdir(parents=True, exist_ok=True)
 
-        if area > 1_000_000:
-            big_area += 1
+    for stem in iter_stems(start_word, n_words, angles):
+        try:
+            clip, kept_indices, meta = preprocess_stem(
+                stem,
+                step=step,
+                margin_px=shift_margin_px,
+                normalise_imagenet=True,
+                img_w=img_w,
+                img_h=img_h,
+            )
 
-        if area > max_area:
-            max_area = area
-            max_area_info = (frame_idx, (x1, y1, x2, y2), area)
+            saved = 0
+            if save_previews:
+                clip_rgb01 = denormalise_imagenet(clip)
+                saved = save_clip_as_jpgs(stem, clip_rgb01, kept_indices)
 
-        if preview_printed < PREVIEW:
-            print(f"frame={frame_idx:012d} bbox={(x1,y1,x2,y2)} area={area}")
-            preview_printed += 1
+            # --- one-line summary (similar to batch_check) ---
+            print(
+                f"{stem} label={meta['label']} "
+                f"kept={meta['kept_frames']}/{meta['requested_frames']} "
+                f"missing_kp={meta['missing_keypoints_frames']} "
+                f"discarded={meta['discarded_size_or_oob_frames']} "
+                f"saved_jpg={saved}"
+            )
 
-    print(f"large_area_frames(>1,000,000): {big_area}/{len(indices)}")
-    if max_area_info is not None:
-        fi, bb, ar = max_area_info
-        print(f"max_area: frame={fi:012d} bbox={bb} area={ar}")
+        except Exception as e:
+            print(f"[FAIL] {stem}: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    # ------------- EDIT THESE VARIABLES -------------
+    START_WORD = 1501
+    N_WORDS = 10
+    ANGLES = ["D", "F", "L", "R", "U"]
+
+    STEP = 5
+    SHIFT_MARGIN_PX = 40  # this is your crop_bounds shift margin
+    SAVE_PREVIEWS = True
+    IMG_W, IMG_H = 1920, 1080
+    # -----------------------------------------------
+
+    main(
+        start_word=START_WORD,
+        n_words=N_WORDS,
+        angles=ANGLES,
+        step=STEP,
+        shift_margin_px=SHIFT_MARGIN_PX,
+        save_previews=SAVE_PREVIEWS,
+        img_w=IMG_W,
+        img_h=IMG_H,
+    )

@@ -1,30 +1,28 @@
 import json
 import math
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 
-def box_outline(
+def crop_valid(
     keypoints_json: Path,
     img_w: int,
     img_h: int,
-    margin_px: int = 20,
-) -> Tuple[int, int, int, int]:
+    margin_px: int = 40,
+) -> Tuple[bool, str, int]:
     """
-    One-pass bbox extraction:
-      - reads x,y from each triple
-      - updates min/max immediately
-      - no point list allocated
-    Rule A: keep all finite points; ignore confidence; drop pose.
-    Returns inclusive (x1,y1,x2,y2) clamped to frame.
+    Checks if square crop exceeds keypoint value
     """
     d = json.loads(keypoints_json.read_text(encoding="utf-8"))
     people = d["people"]
 
     min_x = float("inf")
-    min_y = float("inf")
     max_x = float("-inf")
-    max_y = float("-inf")
+
+    crop_factor = int((img_w - img_h)/2)
+    max_crop = img_w - crop_factor              # 1500
+    min_crop = crop_factor                      # 420
+
 
     for keypoints in ("face_keypoints_2d", "hand_left_keypoints_2d", "hand_right_keypoints_2d"):
         arr = people[keypoints]
@@ -34,32 +32,99 @@ def box_outline(
 
         for i in range(0, n, 3):
             x = arr[i]
-            y = arr[i + 1]
             # ignore arr[i+2] (confidence)
 
             # compare min max
-            if isinstance(x, (int, float)) and isinstance(y, (int, float)) and math.isfinite(x) and math.isfinite(y):
+            if isinstance(x, (int, float)) and math.isfinite(x):
                 if x < min_x: min_x = x
-                if y < min_y: min_y = y
                 if x > max_x: max_x = x
-                if y > max_y: max_y = y
 
     if min_x == float("inf"):
         raise ValueError(f"No finite keypoints found in {keypoints_json}")
 
     # inclusive integer bbox
-    x1 = int(math.floor(min_x)) - margin_px
-    y1 = int(math.floor(min_y)) - margin_px
-    x2 = int(math.ceil(max_x)) + margin_px
-    y2 = int(math.ceil(max_y)) + margin_px
+    x1 = int(math.floor(min_x))
+    x2 = int(math.ceil(max_x))
 
     # clamp inclusive
     x1 = max(0, min(x1, img_w - 1))
-    y1 = max(0, min(y1, img_h - 1))
     x2 = max(0, min(x2, img_w - 1))
-    y2 = max(0, min(y2, img_h - 1))
 
-    if x2 < x1 or y2 < y1:
-        raise ValueError(f"Invalid bbox after clamping: {(x1, y1, x2, y2)}")
+    if x2 < x1:
+        raise ValueError(f"Invalid x after clamping: {(x1, x2)}")
 
-    return x1, y1, x2, y2
+    # check if squaring crops keypoint
+    if x1 < min_crop or x2 >= max_crop:
+        crop_check = False
+
+        # which direction fails?
+        if x2-x1+1+margin_px >= img_h:
+            crop_direction = "size"
+            error_factor = 0
+        elif x1 < min_crop:
+            crop_direction = "min"
+            error_factor = min_crop - x1
+        elif x2 >= max_crop:
+            crop_direction = "max"
+            error_factor = x2+1 - max_crop
+        else:
+            raise ValueError(f"x-coord outside crop: {(x1, x2)}")
+
+    else:
+        crop_check = True
+        crop_direction = "ok"
+        error_factor = 0
+
+    return crop_check, crop_direction, error_factor
+
+
+def crop_bounds(
+        ok: bool,
+        direction: str,
+        error_factor: int,
+        img_w: int = 1920,
+        img_h: int = 1080,
+        margin_px: int = 40,
+) -> Optional[Tuple[int, int]]:
+
+    """
+    :param ok:
+    :param direction:
+    :param error_factor:
+    :param img_w:
+    :param img_h:
+    :param margin_px:
+    :return: (crop_x1, crop_x2)
+
+    Returns the value which should be cropped
+    """
+
+    crop_w = img_h                              # 1080
+    crop_factor = int((img_w - img_h) / 2)
+    max_crop = img_w - crop_factor              # 1500
+    min_crop = crop_factor                      # 420
+
+    if direction == "size":
+        return None
+
+    if ok or direction == "ok":
+        return min_crop, max_crop
+
+    if direction not in ("min", "max"):
+        raise ValueError(f"Unexpected direction: {direction}")
+
+    shift = error_factor + margin_px       # shift crop direction
+    if direction == "min":
+        new_min = min_crop - shift
+    else:  # "max"
+        new_min = min_crop + shift
+
+    new_max = new_min + crop_w
+
+    # If shifting would push outside video bounds, discard (conservative, avoids silent truncation)
+    if new_min < 0 or new_max > img_w:
+        return None
+
+    return new_min, new_max
+
+
