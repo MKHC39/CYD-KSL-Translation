@@ -1,4 +1,3 @@
-# ksl_dataset.py
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -95,8 +94,6 @@ class KSLStemDataset(Dataset):
             s.stem,
             step=self.step,
             margin_px=self.shift_margin_px,
-            img_w=self.img_w,
-            img_h=self.img_h,
             normalise_imagenet=self.normalise_imagenet,
         )
         y = self.w_to_id[s.w]

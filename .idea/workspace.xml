@@ -5,14 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="94422c41-8ada-450f-b0fc-f503bbcf0352" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Dataset/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dataset/cache_clips.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dataset/cached_dataset.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dataset/pydata.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dataset/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/resnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/resnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dataset/cache_clips.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset/cache_clips.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dataset/pydata.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset/pydata.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/border.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/border.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/frame_extract.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/frame_extract.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/preprocess_clip.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/preprocess_clip.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,28 +39,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.border.executor": "Run",
-    "Python.cache_clips.executor": "Run",
-    "Python.dataset_preprocess.executor": "Run",
-    "Python.frameextract.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.mean_extractor.executor": "Run",
-    "Python.preprocess_clip.executor": "Run",
-    "Python.resnet.executor": "Run",
-    "Python.something.executor": "Run",
-    "Python.test (1).executor": "Run",
-    "Python.test.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.border.executor&quot;: &quot;Run&quot;,
+    &quot;Python.cache_clips.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_preprocess.executor&quot;: &quot;Run&quot;,
+    &quot;Python.demo.executor&quot;: &quot;Run&quot;,
+    &quot;Python.frameextract.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.mean_extractor.executor&quot;: &quot;Run&quot;,
+    &quot;Python.preprocess_clip.executor&quot;: &quot;Run&quot;,
+    &quot;Python.resnet.executor&quot;: &quot;Run&quot;,
+    &quot;Python.something.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python.test (1)">
     <configuration name="cache_clips" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="KSL_Recognition" />
@@ -109,7 +109,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="resnet" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="demo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="KSL_Recognition" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -118,12 +118,35 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/modules" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Downloads/CorrNet-main/CorrNet-main" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$USER_HOME$/Downloads/CorrNet-main/CorrNet-main/demo.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="preprocess_clip" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="KSL_Recognition" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/preprocess" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/modules/resnet.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/preprocess/preprocess_clip.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -155,36 +178,13 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="KSL_Recognition" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/preprocess" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/preprocess/test.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Python.test (1)" />
         <item itemvalue="Python.cache_clips" />
+        <item itemvalue="Python.demo" />
+        <item itemvalue="Python.preprocess_clip" />
         <item itemvalue="Python.dataset_preprocess" />
-        <item itemvalue="Python.resnet" />
-        <item itemvalue="Python.test" />
       </list>
     </recent_temporary>
   </component>

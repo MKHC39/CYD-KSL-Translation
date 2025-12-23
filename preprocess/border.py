@@ -1,7 +1,7 @@
 import json
 import math
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Literal
 
 
 def crop_valid(
@@ -12,6 +12,13 @@ def crop_valid(
 ) -> Tuple[bool, str, int]:
     """
     Checks if square crop exceeds keypoint value
+
+    :param keypoints_json:
+    :param img_w:
+    :param img_h:
+    :param margin_px:
+
+    :return: (ok, crop_direction, error_factor)
     """
     d = json.loads(keypoints_json.read_text(encoding="utf-8"))
     people = d["people"]
@@ -32,7 +39,6 @@ def crop_valid(
 
         for i in range(0, n, 3):
             x = arr[i]
-            # ignore arr[i+2] (confidence)
 
             # compare min max
             if isinstance(x, (int, float)) and math.isfinite(x):
@@ -80,7 +86,7 @@ def crop_valid(
 
 def crop_bounds(
         ok: bool,
-        direction: str,
+        direction: Literal["min", "max", "size", "ok"],
         error_factor: int,
         img_w: int = 1920,
         img_h: int = 1080,
@@ -88,15 +94,18 @@ def crop_bounds(
 ) -> Optional[Tuple[int, int]]:
 
     """
+    Computes the x coordinate of the crop boundary, shifting if necessary.
+
     :param ok:
-    :param direction:
+    :param direction: {"min", "max", "size", "ok"}
     :param error_factor:
     :param img_w:
     :param img_h:
     :param margin_px:
+
     :return: (crop_x1, crop_x2)
 
-    Returns the value which should be cropped
+    Returns the x coord of the crop boundary.
     """
 
     crop_w = img_h                              # 1080
@@ -121,9 +130,13 @@ def crop_bounds(
 
     new_max = new_min + crop_w
 
-    # If shifting would push outside video bounds, discard (conservative, avoids silent truncation)
-    if new_min < 0 or new_max > img_w:
-        return None
+    # If shifting would push outside video bounds, set to within bounds
+    if new_min < 0:
+        new_min = 0
+        new_max = new_min + crop_w
+    elif new_max > img_w:
+        new_max = img_w
+        new_min = new_max - crop_w
 
     return new_min, new_max
 

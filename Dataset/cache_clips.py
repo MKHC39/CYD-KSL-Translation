@@ -10,7 +10,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 W_START = 1501
 W_END = 1520
 ANGLES = ["D", "F", "L", "R", "U"]
-STEP = 2
+STEP = 1
 SHIFT_MARGIN_PX = 40
 IMG_W = 1920
 IMG_H = 1080
@@ -29,8 +29,6 @@ def main():
                 sample.stem,
                 step=STEP,
                 margin_px=SHIFT_MARGIN_PX,
-                img_w=IMG_W,
-                img_h=IMG_H,
                 normalise_imagenet=True,
             )
             # save clip + label id key (w) + lengths

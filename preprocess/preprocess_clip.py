@@ -16,10 +16,10 @@ MORPHEME_ROOT = TRAIN_ROOT / r"[라벨]01_real_word_morpheme\morpheme\01"
 KEYPOINT_ROOT = TRAIN_ROOT / r"[라벨]01_real_word_keypoint\01"
 
 # ----------------- Video / crop constants -----------------
-IMG_W = 1920
-IMG_H = 1080
+IMG_W = 1920            # legacy
+IMG_H = 1080            # legacy
 MARGIN_PX = 40
-STEP = 5
+STEP = 1
 # ResNet input size
 OUT_SIZE = 224
 
@@ -42,18 +42,25 @@ def load_morpheme(morpheme_path: Path) -> Tuple[float, float, str]:
 def frame_to_tensor(
         frame_bgr: np.ndarray,
         x1: int,
-        x2_excl: int,
+        x2: int,
         normalise_imagenet: bool = True,
         img_h:int = 1080
     ) -> torch.Tensor:
     """
-    Crop full height using [x1:x2_excl], resize to 224x224.
-    Returns FloatTensor CHW in RGB range [0,1] (no normalisation here).
+    Crop full height using [x1:x2], resize to 224x224.
+    Returns FloatTensor CHW in RGB range [0,1] or normalised
+
+    :param frame_bgr: BGR frame
+    :param x1: int
+    :param x2: int
+    :param normalise_imagenet: bool
+    :param img_h: int
+    :return: Tensor
     """
     # full height crop, fixed width 1080
-    crop = frame_bgr[:, x1:x2_excl]  # (1080,1080,3) BGR uint8
+    crop = frame_bgr[:, x1:x2]  # (1080,1080,3) BGR uint8
     if crop.shape[1] != img_h or crop.shape[0] != img_h:
-        raise ValueError(f"Unexpected crop shape: {crop.shape}, bounds=({x1},{x2_excl})")
+        raise ValueError(f"Unexpected crop shape: {crop.shape}, bounds=({x1},{x2})")
 
     # downscale to 224x224
     crop = cv2.resize(crop, (OUT_SIZE, OUT_SIZE), interpolation=cv2.INTER_AREA)
@@ -72,10 +79,8 @@ def frame_to_tensor(
 
 def preprocess_stem(
         stem: str,
-        step: int = 5,
+        step: int = 1,
         margin_px: int = 40,
-        img_w: int = 1920,
-        img_h: int = 1080,
         normalise_imagenet: bool = True
     ) -> Tuple[torch.Tensor, List[int], Dict[str, Any]]:
     """
@@ -87,8 +92,6 @@ def preprocess_stem(
       kept_indices: original frame indices kept
       meta: label + skip stats
     """
-    if img_w < img_h:
-        raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
 
     video_path = VIDEO_ROOT / f"{stem}.mp4"
     morpheme_path = MORPHEME_ROOT / f"{stem}_morpheme.json"
@@ -103,6 +106,14 @@ def preprocess_stem(
 
     start_s, end_s, label = load_morpheme(morpheme_path)
     frames, indices, fps = pull_video_frames(video_path, start_s, end_s, step=step)
+
+    if not frames:
+        raise ValueError(f"No frames extracted for {stem}")
+
+    img_h, img_w = frames[0].shape[:2]
+
+    if img_w < img_h:
+        raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
 
     missing_kp = 0
     discarded_bounds = 0
@@ -123,8 +134,8 @@ def preprocess_stem(
             discarded_bounds += 1
             continue
 
-        x1, x2_excl = bounds
-        tensors.append(frame_to_tensor(frame_bgr, x1, x2_excl, img_h=img_h, normalise_imagenet=normalise_imagenet))
+        x1, x2 = bounds
+        tensors.append(frame_to_tensor(frame_bgr, x1, x2, img_h=img_h, normalise_imagenet=normalise_imagenet))
         kept_indices.append(frame_idx)
 
     if not tensors:
@@ -154,7 +165,7 @@ def batch_check(start_word: int, n_words: int, step: int, margin_px: int, img_w:
         for a in angles:
             stem = f"NIA_SL_WORD{w:04d}_REAL01_{a}"
             try:
-                clip, index, meta = preprocess_stem(stem, step=step, margin_px=margin_px, img_w=img_w, img_h=img_h, normalise_imagenet=True)
+                clip, index, meta = preprocess_stem(stem, step=step, margin_px=margin_px, normalise_imagenet=True)
                 print(
                     f"{stem} label={meta['label']} "
                     f"kept={meta['kept_frames']}/{meta['requested_frames']} "

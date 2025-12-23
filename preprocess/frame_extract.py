@@ -9,14 +9,15 @@ import numpy as np
 def time_to_frame(start_s: float, end_s: float, fps: float) -> Tuple[int, int]:
     """
     Inclusive [start_s, end_s] in time => frames i such that start_s <= i/fps <= end_s
-    => start_f = ceil(start_s*fps), end_f = floor(end_s*fps)
+
+    return: (starting frame, ending frame)
     """
     start_f = int(math.ceil(start_s * fps))
     end_f = int(math.floor(end_s * fps))
     return start_f, end_f
 
 
-def frame_index(start_f: int, end_f: int, step: int = 5) -> List[int]:
+def frame_index(start_f: int, end_f: int, step: int = 1) -> List[int]:
     """
     - indices = start_f, start_f+step, start_f+2*step, ... <= end_f
     - if the last index is not end_f, append end_f
@@ -56,7 +57,6 @@ def frame_extractor(
 
     frames: List[np.ndarray] = []
     curr_frame = 0
-    captured = []
 
     while True:
         ok, frame = cap.read()
@@ -65,7 +65,6 @@ def frame_extractor(
 
         if curr_frame in keep_set:
             frames.append(frame)
-            captured.append(curr_frame)
 
         if curr_frame >= max_idx:
             break
@@ -81,13 +80,18 @@ def pull_video_frames(
     video_path: Path,
     start_s: float,
     end_s: float,
-    step: int = 5,
+    step: int = 1,
 ) -> Tuple[List[np.ndarray], List[int], float]:
     """
-    Full pipeline:
       - compute start_f/end_f from seconds (inclusive)
       - build indices using step-5-from-start + include end_f
       - sequentially decode and extract those frames
+
+      :param video_path:
+      :param start_s:
+      :param end_s:
+      :param step:
+      :return: (frames, indices, fps)
     """
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
