@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="94422c41-8ada-450f-b0fc-f503bbcf0352" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/preprocess/cache_preprocess.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/preprocess/frame_extract.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/frame_extract.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dataset/KSL_pydata.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset/KSL_pydata.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/preprocess/preprocess_clip.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/preprocess_clip.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -37,32 +37,38 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.border.executor&quot;: &quot;Run&quot;,
-    &quot;Python.cache_clips.executor&quot;: &quot;Run&quot;,
-    &quot;Python.dataset_preprocess.executor&quot;: &quot;Run&quot;,
-    &quot;Python.demo.executor&quot;: &quot;Run&quot;,
-    &quot;Python.frameextract.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.make_ksl_dict.executor&quot;: &quot;Run&quot;,
-    &quot;Python.mean_extractor.executor&quot;: &quot;Run&quot;,
-    &quot;Python.preprocess_clip.executor&quot;: &quot;Run&quot;,
-    &quot;Python.resnet.executor&quot;: &quot;Run&quot;,
-    &quot;Python.something.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test (1).executor&quot;: &quot;Debug&quot;,
-    &quot;Python.test.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.border.executor": "Run",
+    "Python.cache_clips.executor": "Run",
+    "Python.cache_preprocess.executor": "Run",
+    "Python.dataset_preprocess.executor": "Run",
+    "Python.demo.executor": "Run",
+    "Python.frameextract.executor": "Run",
+    "Python.main.executor": "Debug",
+    "Python.make_ksl_dict.executor": "Run",
+    "Python.mean_extractor.executor": "Run",
+    "Python.preprocess_clip.executor": "Run",
+    "Python.resnet.executor": "Run",
+    "Python.something.executor": "Run",
+    "Python.test (1).executor": "Debug",
+    "Python.test.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
-}</component>
-  <component name="RunManager" selected="Python.preprocess_clip">
-    <configuration name="cache_clips" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\CHOI\PycharmProjects\KSL_Recognition\preprocess" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.cache_preprocess">
+    <configuration name="cache_preprocess" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="KSL_Recognition" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -71,12 +77,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Dataset" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/preprocess" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Dataset/cache_clips.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/preprocess/cache_preprocess.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -179,11 +185,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.cache_preprocess" />
         <item itemvalue="Python.preprocess_clip" />
         <item itemvalue="Python.make_ksl_dict" />
         <item itemvalue="Python.main" />
         <item itemvalue="Python.test (1)" />
-        <item itemvalue="Python.cache_clips" />
       </list>
     </recent_temporary>
   </component>
@@ -216,6 +222,11 @@
           <url>file://$PROJECT_DIR$/../CorrNet_Plus/CorrNet_Plus_CSLR/dataset/dataloader_video.py</url>
           <line>26</line>
           <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocess/cache_preprocess.py</url>
+          <line>172</line>
+          <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

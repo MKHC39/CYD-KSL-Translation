@@ -21,7 +21,7 @@ IMG_H = 1080            # legacy
 MARGIN_PX = 40
 STEP = 1
 # ResNet input size
-OUT_SIZE = 224
+OUT_SIZE = 256
 
 IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)  # RGB
 IMAGENET_STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)  # RGB
@@ -43,7 +43,7 @@ def frame_to_tensor(
         frame_bgr: np.ndarray,
         x1: int,
         x2: int,
-        normalise_imagenet: bool = True,
+        normalise_imagenet: bool = False,
         img_h:int = 1080
     ) -> torch.Tensor:
     """
@@ -81,7 +81,7 @@ def preprocess_stem(
         stem: str,
         step: int = 1,
         margin_px: int = 40,
-        normalise_imagenet: bool = True
+        normalise_imagenet: bool = False
     ) -> Tuple[torch.Tensor, List[int], Dict[str, Any]]:
     """
     End-to-end for a single stem:

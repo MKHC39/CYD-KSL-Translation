@@ -25,6 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -34,6 +35,7 @@ from preprocess.preprocess_clip import preprocess_stem, load_morpheme, MORPHEME_
 
 # CorrNet's collate_fn relies on a module-level `kernel_sizes` list
 from . import dataloader_video
+from utils import video_augmentation
 
 DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")
 
@@ -56,32 +58,6 @@ def _iter_samples(
             stem = f"NIA_SL_WORD{w:04d}_REAL01_{a}"
             out.append(Sample(stem=stem, w=w, angle=a))
     return out
-
-
-def _build_label_map_from_morphemes(
-    w_start: int,
-    w_end: int,
-    angle_for_label: str = "D",
-) -> Dict[str, int]:
-    """
-    Build {label_str -> id} by reading one morpheme json per word.
-
-    Notes:
-      - In NIA KSL dataset, the label is consistent across angles for a given WORD id.
-      - We read only one angle (default "D") for speed and determinism.
-    """
-    label_to_id: Dict[str, int] = {}
-    next_id = 0
-    for w in range(w_start, w_end + 1):
-        stem = f"NIA_SL_WORD{w:04d}_REAL01_{angle_for_label}"
-        mp = MORPHEME_ROOT / f"{stem}_morpheme.json"
-        if not mp.exists():
-            continue
-        _, _, label = load_morpheme(mp)
-        if label not in label_to_id:
-            label_to_id[label] = next_id
-            next_id += 1
-    return label_to_id
 
 
 class KSLFeeder(Dataset):
@@ -123,8 +99,6 @@ class KSLFeeder(Dataset):
         w_start: int = 1501,
         w_end: int = 3000,
         angles: Sequence[str] = DEFAULT_ANGLES,
-        step: int = 1,
-        margin_px: int = 40,
         split: str = "none",
         split_mod_k: int = 10,
         split_mod_train: Sequence[int] = (0, 1, 2, 3, 4, 5, 6, 7),
@@ -138,26 +112,18 @@ class KSLFeeder(Dataset):
         self.dataset = dataset
         self.mode = str(mode)
         self.transform_mode = "train" if transform_mode else "test"
+        self.data_aug = self.transform()
+        self.gloss_dict = gloss_dict
 
         self.w_start = int(w_start)
         self.w_end = int(w_end)
         self.angles = tuple(angles)
-        self.step = int(step)
-        self.margin_px = int(margin_px)
         self.drop_failures = bool(drop_failures)
         self._kernel_sizes = list(kernel_size) if kernel_size is not None else [1]
 
         # Ensure CorrNet temporal padding has what it needs
         if kernel_size is not None:
             dataloader_video.kernel_sizes = list(kernel_size)
-
-        # Build label map:
-        # - If CorrNet supplies gloss_dict, we can reuse it.
-        # - Otherwise build from morphemes for determinism & readability.
-        if gloss_dict is not None and isinstance(gloss_dict, dict) and len(gloss_dict) > 0:
-            self.label_to_id = dict(gloss_dict)
-        else:
-            self.label_to_id = _build_label_map_from_morphemes(self.w_start, self.w_end)
 
         # Build samples
         all_samples = _iter_samples(self.w_start, self.w_end, self.angles)
@@ -179,6 +145,14 @@ class KSLFeeder(Dataset):
         if self.drop_failures:
             self.samples = self._prefilter_existing(self.samples)
 
+    cache_root: str = r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz",
+    use_cache: bool = True,
+
+    # CorrNet-style aug params (match BaseFeeder defaults)
+    frame_interval: int = 1,
+    image_scale: int = 1,  # NOTE: CorrNet's Resize treats 1.0 as "no-op" :contentReference[oaicite:5]{index=5}
+    input_size: int = 256,
+
     def _prefilter_existing(self, samples: List[Sample]) -> List[Sample]:
         """
         Light prefilter: check the required assets exist for the stem.
@@ -198,12 +172,15 @@ class KSLFeeder(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    def normalize(self, video, label, file_id=None):
+        video, label = self.data_aug(video, label, file_id)
+        video = video.float() / 127.5 - 1
+        return video, label
+
     def transform(self):
         if self.transform_mode == "train":
             print("Apply training transform.")
             return video_augmentation.Compose([
-                # video_augmentation.CenterCrop(224),
-                # video_augmentation.WERAugment('/lustre/wangtao/current_exp/exp/baseline/boundary.npy'),
                 video_augmentation.RandomCrop(self.input_size),
                 video_augmentation.RandomHorizontalFlip(0.5),
                 video_augmentation.Resize(self.image_scale),
@@ -219,52 +196,44 @@ class KSLFeeder(Dataset):
             ])
 
     def __getitem__(self, idx: int):
-
         from . import dataloader_video
-
         if not hasattr(dataloader_video, "kernel_sizes") or dataloader_video.kernel_sizes is None:
             dataloader_video.kernel_sizes = self._kernel_sizes
 
         s = self.samples[idx]
 
-        # Run your preprocessing; return RGB [0,1] tensors when normalise_imagenet=False
-        clip_01, kept_indices, meta = preprocess_stem(
-            s.stem,
-            step=self.step,
-            margin_px=self.margin_px,
-            normalise_imagenet=False,
-        )
+        if not self.use_cache:
+            raise RuntimeError("use_cache=False not supported in this cached feeder mode.")
 
-        # Map [0,1] -> [-1,1] (CorrNet-like scaling)
-        clip = clip_01 * 2.0 - 1.0
+        npz_path = self.cache_root / f"{s.stem}.npz"
+        if not npz_path.exists():
+            raise FileNotFoundError(f"Missing cache file: {npz_path}")
 
-        # Convert label string -> id (CTC sequence)
-        label_str = meta.get("label")
-        if label_str is None:
-            raise RuntimeError(f"Missing label in meta for stem={s.stem}")
+        pack = np.load(npz_path, allow_pickle=False)
 
-        if label_str not in self.label_to_id:
-            # Insert deterministically at end if unseen (rare if dict built properly)
-            raise KeyError(f"Label not in gloss_dict: {label_str} (stem={s.stem})")
+        # Expected cache format (example):
+        #   video: uint8 ndarray (T, H, W, 3), RGB, 0..255
+        #   label_id: int (already CorrNet-style id, i.e., >=1)
+        #   label: str
+        video = pack["video"]
+        label_id = int(pack["label_id"])
+        label_str = str(pack["label"]) if "label" in pack.files else None
 
-        y = int(self.label_to_id[label_str][0])
-        label = torch.as_tensor([y], dtype=torch.long)  # length-1 token sequence
+        # CorrNet's augmentation expects "video" as a sequence of HWC frames.
+        # Passing a numpy array works because transforms index clip[0] etc. :contentReference[oaicite:12]{index=12}
+        # Make label a *list* (CTC token sequence).
+        label_list = [label_id]
 
-        # original_info is passed through for logging/decoding bookkeeping
-        original_info: Dict[str, Any] = {
+        video, label_list = self.normalize(video, label_list, file_id=s.stem)
+
+        label = torch.LongTensor(label_list)
+
+        original_info = {
             "stem": s.stem,
             "w": s.w,
             "angle": s.angle,
             "label": label_str,
-            "label_id": y,
-            "start_s": meta.get("start_s"),
-            "end_s": meta.get("end_s"),
-            "fps": meta.get("fps"),
-            "kept_indices": kept_indices,
-            "requested_frames": meta.get("requested_frames"),
-            "kept_frames": meta.get("kept_frames"),
-            "missing_keypoints_frames": meta.get("missing_keypoints_frames"),
-            "discarded_size_or_oob_frames": meta.get("discarded_size_or_oob_frames"),
+            "label_id": label_id,
         }
 
-        return clip, label, original_info
+        return video, label, original_info
