@@ -7,9 +7,7 @@
     <list default="true" id="94422c41-8ada-450f-b0fc-f503bbcf0352" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dataset/cache_clips.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset/cache_clips.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dataset/pydata.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset/pydata.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/preprocess/border.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/border.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/preprocess/frame_extract.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/frame_extract.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/preprocess/preprocess_clip.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/preprocess_clip.py" afterDir="false" />
     </list>
@@ -47,12 +45,13 @@
     &quot;Python.dataset_preprocess.executor&quot;: &quot;Run&quot;,
     &quot;Python.demo.executor&quot;: &quot;Run&quot;,
     &quot;Python.frameextract.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.make_ksl_dict.executor&quot;: &quot;Run&quot;,
     &quot;Python.mean_extractor.executor&quot;: &quot;Run&quot;,
     &quot;Python.preprocess_clip.executor&quot;: &quot;Run&quot;,
     &quot;Python.resnet.executor&quot;: &quot;Run&quot;,
     &quot;Python.something.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.test (1).executor&quot;: &quot;Debug&quot;,
     &quot;Python.test.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
@@ -62,7 +61,7 @@
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python.test (1)">
+  <component name="RunManager" selected="Python.preprocess_clip">
     <configuration name="cache_clips" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="KSL_Recognition" />
       <option name="ENV_FILES" value="" />
@@ -86,7 +85,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="dataset_preprocess" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="KSL_Recognition" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -95,12 +94,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Downloads/CorrNet-main/CorrNet-main/preprocess" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../CorrNet_Plus/CorrNet_Plus_CSLR" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$USER_HOME$/Downloads/CorrNet-main/CorrNet-main/preprocess/dataset_preprocess.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../CorrNet_Plus/CorrNet_Plus_CSLR/main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -109,7 +108,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="demo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="make_ksl_dict" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="KSL_Recognition" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -118,12 +117,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Downloads/CorrNet-main/CorrNet-main" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$USER_HOME$/Downloads/CorrNet-main/CorrNet-main/demo.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/make_ksl_dict.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -180,11 +179,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.preprocess_clip" />
+        <item itemvalue="Python.make_ksl_dict" />
+        <item itemvalue="Python.main" />
         <item itemvalue="Python.test (1)" />
         <item itemvalue="Python.cache_clips" />
-        <item itemvalue="Python.demo" />
-        <item itemvalue="Python.preprocess_clip" />
-        <item itemvalue="Python.dataset_preprocess" />
       </list>
     </recent_temporary>
   </component>
@@ -213,7 +212,19 @@
           <line>127</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../CorrNet_Plus/CorrNet_Plus_CSLR/dataset/dataloader_video.py</url>
+          <line>26</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
       </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
     </breakpoint-manager>
   </component>
 </project>

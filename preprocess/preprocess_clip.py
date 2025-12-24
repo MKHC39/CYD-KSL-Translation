@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 
 import cv2
 import numpy as np
 import torch
 
-from .frame_extract import pull_video_frames
+from .frame_extract import pull_video_items
 from .border import crop_valid, crop_bounds
 
 # ----------------- Dataset roots  -----------------
@@ -57,7 +57,7 @@ def frame_to_tensor(
     :param img_h: int
     :return: Tensor
     """
-    # full height crop, fixed width 1080
+    # full height crop
     crop = frame_bgr[:, x1:x2]  # (1080,1080,3) BGR uint8
     if crop.shape[1] != img_h or crop.shape[0] != img_h:
         raise ValueError(f"Unexpected crop shape: {crop.shape}, bounds=({x1},{x2})")
@@ -105,42 +105,54 @@ def preprocess_stem(
         raise FileNotFoundError(f"Missing keypoint folder: {keypoint_dir}")
 
     start_s, end_s, label = load_morpheme(morpheme_path)
-    frames, indices, fps = pull_video_frames(video_path, start_s, end_s, step=step)
-
-    if not frames:
-        raise ValueError(f"No frames extracted for {stem}")
-
-    img_h, img_w = frames[0].shape[:2]
-
-    if img_w < img_h:
-        raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
-
     missing_kp = 0
     discarded_bounds = 0
 
-    tensors: List[torch.Tensor] = []
-    kept_indices: List[int] = []
+    img_w = None
+    img_h = None
 
-    for frame_bgr, frame_idx in zip(frames, indices):
+    def transform(frame_bgr: np.ndarray, frame_idx: int) -> Optional[torch.Tensor]:
+        nonlocal missing_kp, discarded_bounds, img_w, img_h
+
+        if img_h is None or img_w is None:
+            img_h, img_w = frame_bgr.shape[:2]
+            if img_w < img_h:
+                # reject this video early; you can also "return None" but that hides the error
+                raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
+
         kp_path = keypoint_dir / f"{stem}_{frame_idx:012d}_keypoints.json"
         if not kp_path.exists():
             missing_kp += 1
-            continue
+            return None
 
         ok, direction, error = crop_valid(kp_path, img_w, img_h, margin_px=margin_px)
         bounds = crop_bounds(ok, direction, error, img_w=img_w, img_h=img_h, margin_px=margin_px)
-
         if bounds is None:
             discarded_bounds += 1
-            continue
+            return None
 
         x1, x2 = bounds
-        tensors.append(frame_to_tensor(frame_bgr, x1, x2, img_h=img_h, normalise_imagenet=normalise_imagenet))
-        kept_indices.append(frame_idx)
+        return frame_to_tensor(
+            frame_bgr,
+            x1,
+            x2,
+            img_h=img_h,
+            normalise_imagenet=normalise_imagenet,
+        )
+
+    tensors, kept_indices, fps, requested_indices, decode_fail = pull_video_items(
+        video_path,
+        start_s,
+        end_s,
+        step=step,
+        transform=transform,
+        seek_to_start=True,
+    )
 
     if not tensors:
         raise RuntimeError(
-            f"No usable frames for {stem}. requested={len(indices)} missing_kp={missing_kp} discarded={discarded_bounds}"
+            f"No usable frames for {stem}. requested={len(requested_indices)} "
+            f"missing_kp={missing_kp} discarded={discarded_bounds}"
         )
 
     clip = torch.stack(tensors, dim=0)  # (T,3,224,224)
@@ -151,10 +163,11 @@ def preprocess_stem(
         "start_s": start_s,
         "end_s": end_s,
         "fps": fps,
-        "requested_frames": len(indices),
+        "requested_frames": len(requested_indices),
         "kept_frames": len(kept_indices),
         "missing_keypoints_frames": missing_kp,
         "discarded_size_or_oob_frames": discarded_bounds,
+        "decode_fail": decode_fail,
     }
     return clip, kept_indices, meta
 
@@ -170,11 +183,12 @@ def batch_check(start_word: int, n_words: int, step: int, margin_px: int, img_w:
                     f"{stem} label={meta['label']} "
                     f"kept={meta['kept_frames']}/{meta['requested_frames']} "
                     f"missing_kp={meta['missing_keypoints_frames']} "
-                    f"discarded={meta['discarded_size_or_oob_frames']}"
+                    f"discarded={meta['discarded_size_or_oob_frames']} "
+                    f"decode_fail={meta['decode_fail']}"
                 )
             except Exception as e:
                 print(f"[FAIL] {stem}: {e}")
 
 
 if __name__ == "__main__":
-    batch_check(start_word=1501, n_words=50, step=STEP, margin_px=MARGIN_PX, img_w= IMG_W, img_h=IMG_H)
+    batch_check(start_word=1501, n_words=30, step=STEP, margin_px=MARGIN_PX, img_w= IMG_W, img_h=IMG_H)
