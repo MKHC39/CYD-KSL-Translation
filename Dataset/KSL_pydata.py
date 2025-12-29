@@ -31,7 +31,6 @@ import torch
 from torch.utils.data import Dataset
 
 # Your preprocessing entrypoint (must be importable in your project)
-from preprocess.preprocess_clip import preprocess_stem, load_morpheme, MORPHEME_ROOT
 
 # CorrNet's collate_fn relies on a module-level `kernel_sizes` list
 from . import dataloader_video
@@ -94,10 +93,15 @@ class KSLFeeder(Dataset):
         kernel_size: Optional[Sequence[str]] = None,
         mode: str = "train",
         transform_mode: bool = True,
+        frame_interval: int = 1,
+        image_scale: int = 1,  # NOTE: CorrNet's Resize treats 1.0 as "no-op" :contentReference[oaicite:5]{index=5}
+        input_size: int = 224,
 
         # Your controls (via feeder_args)
+        cache_root: str = r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz",
+        use_cache: bool = True,
         w_start: int = 1501,
-        w_end: int = 3000,
+        w_end: int = 1510,
         angles: Sequence[str] = DEFAULT_ANGLES,
         split: str = "none",
         split_mod_k: int = 10,
@@ -112,14 +116,30 @@ class KSLFeeder(Dataset):
         self.dataset = dataset
         self.mode = str(mode)
         self.transform_mode = "train" if transform_mode else "test"
-        self.data_aug = self.transform()
+        # CorrNet-style aug params (match BaseFeeder defaults)
+        self.frame_interval = frame_interval
+        self.input_size = input_size
+        self.image_scale = image_scale
+
+        DEFAULT_GLOSS_DICT_PATH = Path(r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz\gloss_dict.npy")
+        if gloss_dict is None or len(gloss_dict) == 0:
+            gloss_dict = np.load(DEFAULT_GLOSS_DICT_PATH, allow_pickle=True).item()
+
+
         self.gloss_dict = gloss_dict
+        self.dict = gloss_dict
+        self.data_aug = self.transform()
+
 
         self.w_start = int(w_start)
         self.w_end = int(w_end)
         self.angles = tuple(angles)
         self.drop_failures = bool(drop_failures)
         self._kernel_sizes = list(kernel_size) if kernel_size is not None else [1]
+        self.cache_root = Path(cache_root)
+        self.use_cache = use_cache
+
+
 
         # Ensure CorrNet temporal padding has what it needs
         if kernel_size is not None:
@@ -145,13 +165,10 @@ class KSLFeeder(Dataset):
         if self.drop_failures:
             self.samples = self._prefilter_existing(self.samples)
 
-    cache_root: str = r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz",
-    use_cache: bool = True,
 
-    # CorrNet-style aug params (match BaseFeeder defaults)
-    frame_interval: int = 1,
-    image_scale: int = 1,  # NOTE: CorrNet's Resize treats 1.0 as "no-op" :contentReference[oaicite:5]{index=5}
-    input_size: int = 256,
+
+
+
 
     def _prefilter_existing(self, samples: List[Sample]) -> List[Sample]:
         """
@@ -197,43 +214,32 @@ class KSLFeeder(Dataset):
 
     def __getitem__(self, idx: int):
         from . import dataloader_video
-        if not hasattr(dataloader_video, "kernel_sizes") or dataloader_video.kernel_sizes is None:
+        if getattr(dataloader_video, "kernel_sizes", None) is None:
             dataloader_video.kernel_sizes = self._kernel_sizes
 
         s = self.samples[idx]
-
-        if not self.use_cache:
-            raise RuntimeError("use_cache=False not supported in this cached feeder mode.")
 
         npz_path = self.cache_root / f"{s.stem}.npz"
         if not npz_path.exists():
             raise FileNotFoundError(f"Missing cache file: {npz_path}")
 
-        pack = np.load(npz_path, allow_pickle=False)
+        with np.load(npz_path, allow_pickle=False) as pack:
+            video = pack["video"]
+            label_id = int(pack["label_id"])
 
-        # Expected cache format (example):
-        #   video: uint8 ndarray (T, H, W, 3), RGB, 0..255
-        #   label_id: int (already CorrNet-style id, i.e., >=1)
-        #   label: str
-        video = pack["video"]
-        label_id = int(pack["label_id"])
-        label_str = str(pack["label"]) if "label" in pack.files else None
+            label_str = None
+            if "label_str" in pack.files:
+                label_str = str(pack["label_str"])
+            elif "label" in pack.files:
+                label_str = str(pack["label"])
 
-        # CorrNet's augmentation expects "video" as a sequence of HWC frames.
-        # Passing a numpy array works because transforms index clip[0] etc. :contentReference[oaicite:12]{index=12}
-        # Make label a *list* (CTC token sequence).
+        if video.dtype != np.uint8 or video.ndim != 4 or video.shape[-1] != 3:
+            raise ValueError(f"Bad cached video: dtype={video.dtype}, shape={video.shape}")
+
         label_list = [label_id]
-
         video, label_list = self.normalize(video, label_list, file_id=s.stem)
 
         label = torch.LongTensor(label_list)
-
-        original_info = {
-            "stem": s.stem,
-            "w": s.w,
-            "angle": s.angle,
-            "label": label_str,
-            "label_id": label_id,
-        }
-
+        original_info = f"{s.stem}|{self.mode}/{s.stem}|0|{label_str}"
         return video, label, original_info
+
