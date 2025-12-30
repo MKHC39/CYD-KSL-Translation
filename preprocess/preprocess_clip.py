@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
 
 import cv2
@@ -8,12 +7,42 @@ import torch
 
 from .frame_extract import pull_video_items
 from .border import crop_valid, crop_bounds
+import re
+from pathlib import Path
 
-# ----------------- Dataset roots  -----------------
-TRAIN_ROOT = Path(r"C:\Users\CHOI\Downloads\KSL Word DataSet\수어 영상\1.Training")
-VIDEO_ROOT = TRAIN_ROOT / r"[원천]01_real_word_video\01"
-MORPHEME_ROOT = TRAIN_ROOT / r"[라벨]01_real_word_morpheme\morpheme\01"
-KEYPOINT_ROOT = TRAIN_ROOT / r"[라벨]01_real_word_keypoint\01"
+from pathlib import Path
+
+TRAIN_ROOT = Path(r"D:\수어 영상\수어 영상\1.Training")
+VAL_ROOT   = Path(r"D:\수어 영상\수어 영상\2.Validation")
+
+
+_STEM_RE = re.compile(r"^NIA_SL_WORD(?P<w>\d{4})_REAL(?P<p>\d{2})_(?P<a>[DFLRU])$")
+
+def parse_stem(stem: str) -> tuple[int, int, str]:
+    m = _STEM_RE.match(stem)
+    if not m:
+        raise ValueError(f"Bad stem format: {stem}")
+    return int(m.group("w")), int(m.group("p")), m.group("a")
+
+def roots_for_signer(p: int) -> tuple[Path, Path, Path]:
+    """
+    Returns (VIDEO_ROOT, MORPHEME_ROOT, KEYPOINT_ROOT) for signer p.
+
+    Train signers: 1..16 in 1.Training
+    Val signers:   17..18 in 2.Validation
+    """
+    if p in (17, 18):
+        video_root    = VAL_ROOT / fr"[원천]01_real_word_video\WORD\{p:02d}-1"
+        morpheme_root = VAL_ROOT / fr"[라벨]01_real_word_morpheme\morpheme\{p:02d}"
+        keypoint_root = VAL_ROOT / fr"[라벨]09_real_word_keypoint\keypoint\{p:02d}"
+        return video_root, morpheme_root, keypoint_root
+
+    # training (1..16)
+    q = 2 * p
+    video_root    = TRAIN_ROOT / fr"[원천]{q:02d}_real_word_video\{p:02d}-1"
+    morpheme_root = TRAIN_ROOT / fr"[라벨]01_real_word_morpheme\morpheme\{p:02d}"
+    keypoint_root = TRAIN_ROOT / fr"[라벨]{p:02d}_real_word_keypoint\{p:02d}"
+    return video_root, morpheme_root, keypoint_root
 
 # ----------------- Video / crop constants -----------------
 IMG_W = 1920            # legacy
@@ -92,6 +121,9 @@ def preprocess_stem(
       kept_indices: original frame indices kept
       meta: label + skip stats
     """
+
+    _, p, _ = parse_stem(stem)
+    VIDEO_ROOT, MORPHEME_ROOT, KEYPOINT_ROOT = roots_for_signer(p)
 
     video_path = VIDEO_ROOT / f"{stem}.mp4"
     morpheme_path = MORPHEME_ROOT / f"{stem}_morpheme.json"

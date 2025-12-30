@@ -37,26 +37,30 @@ from . import dataloader_video
 from utils import video_augmentation
 
 DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")
-
+DEFAULT_SIGNERS_TRAIN = tuple(range(1, 17))   # 1..16
+DEFAULT_SIGNERS_DEV   = (17, 18)
 
 @dataclass(frozen=True)
 class Sample:
     stem: str
     w: int
+    p: int
     angle: str
-
 
 def _iter_samples(
     w_start: int,
     w_end: int,
+    signers: Sequence[int],
     angles: Sequence[str],
 ) -> List[Sample]:
     out: List[Sample] = []
-    for w in range(w_start, w_end + 1):
-        for a in angles:
-            stem = f"NIA_SL_WORD{w:04d}_REAL01_{a}"
-            out.append(Sample(stem=stem, w=w, angle=a))
+    for p in signers:
+        for w in range(w_start, w_end + 1):
+            for a in angles:
+                stem = f"NIA_SL_WORD{w:04d}_REAL{p:02d}_{a}"
+                out.append(Sample(stem=stem, w=w, p=p, angle=a))
     return out
+
 
 
 class KSLFeeder(Dataset):
@@ -85,86 +89,91 @@ class KSLFeeder(Dataset):
     collate_fn = staticmethod(dataloader_video.BaseFeeder.collate_fn)
 
     def __init__(
-        self,
-        # CorrNet-wired args (accepted for compatibility)
-        prefix: Optional[str] = None,
-        gloss_dict: Optional[Dict[str, List[int]]] = None,
-        dataset: Optional[str] = None,
-        kernel_size: Optional[Sequence[str]] = None,
-        mode: str = "train",
-        transform_mode: bool = True,
-        frame_interval: int = 1,
-        image_scale: int = 1,  # NOTE: CorrNet's Resize treats 1.0 as "no-op" :contentReference[oaicite:5]{index=5}
-        input_size: int = 224,
+            self,
+            # CorrNet-wired args (accepted for compatibility)
+            prefix: Optional[str] = None,
+            gloss_dict: Optional[Dict[str, List[int]]] = None,
+            dataset: Optional[str] = None,
+            kernel_size: Optional[Sequence[str]] = None,
+            mode: str = "train",
+            transform_mode: bool = True,
+            frame_interval: int = 1,
+            image_scale: int = 1,
+            input_size: int = 224,
 
-        # Your controls (via feeder_args)
-        cache_root: str = r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz",
-        use_cache: bool = True,
-        w_start: int = 1501,
-        w_end: int = 1510,
-        angles: Sequence[str] = DEFAULT_ANGLES,
-        split: str = "none",
-        # Misc
-        drop_failures: bool = False,
-        **_: Any,
+            # Your controls (via feeder_args)
+            cache_root: str = r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz",
+            use_cache: bool = True,
+            w_start: int = 1501,
+            w_end: int = 1510,
+            angles: Sequence[str] = DEFAULT_ANGLES,
+
+            # NEW: signer split (train=1..16, dev/test=17..18 by default)
+            signers: Optional[Sequence[int]] = None,
+            train_signers: Sequence[int] = tuple(range(1, 17)),
+            dev_signers: Sequence[int] = (17, 18),
+
+            # Optional split controls (kept for compatibility)
+            split: str = "none",
+
+            # Misc
+            **_: Any,
     ):
+        # Basic identity / compatibility
         self.prefix = prefix
         self.dataset = dataset
         self.mode = str(mode)
         self.transform_mode = "train" if transform_mode else "test"
+
         # CorrNet-style aug params (match BaseFeeder defaults)
-        self.frame_interval = frame_interval
-        self.input_size = input_size
+        self.frame_interval = int(frame_interval)
+        self.input_size = int(input_size)
         self.image_scale = image_scale
 
-        DEFAULT_GLOSS_DICT_PATH = Path(r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz\gloss_dict.npy")
+        # Load gloss_dict if not provided
+        DEFAULT_GLOSS_DICT_PATH = Path(
+            r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz\gloss_dict.npy"
+        )
         if gloss_dict is None or len(gloss_dict) == 0:
             gloss_dict = np.load(DEFAULT_GLOSS_DICT_PATH, allow_pickle=True).item()
 
-
         self.gloss_dict = gloss_dict
-        self.dict = gloss_dict
-        self.data_aug = self.transform()
+        self.dict = gloss_dict  # CorrNet expects loader.dataset.dict
 
+        # Cache controls
+        self.cache_root = Path(cache_root)
+        self.use_cache = bool(use_cache)
 
+        # Data controls
         self.w_start = int(w_start)
         self.w_end = int(w_end)
         self.angles = tuple(angles)
-        self.drop_failures = bool(drop_failures)
+        self.split = str(split)
+
+        # Signer controls (IMPORTANT: signers affect *which samples exist*, not label IDs)
+        mode_l = self.mode.lower()
+        if signers is None:
+            if mode_l in ("train", "training"):
+                signers = train_signers
+            elif mode_l in ("dev", "val", "valid", "validation", "test"):
+                signers = dev_signers
+            else:
+                # safest default: include all you might have
+                signers = tuple(sorted(set(train_signers) | set(dev_signers)))
+        self.signers = tuple(int(p) for p in signers)
+
+        # Build augmentation pipeline
+        self.data_aug = self.transform()
+
+        # CorrNet temporal padding expects a module-level kernel_sizes list
         self._kernel_sizes = list(kernel_size) if kernel_size is not None else [1]
-        self.cache_root = Path(cache_root)
-        self.use_cache = use_cache
-
-
-
-        # Ensure CorrNet temporal padding has what it needs
         if kernel_size is not None:
             dataloader_video.kernel_sizes = list(kernel_size)
 
-        # Build samples
-        all_samples = _iter_samples(self.w_start, self.w_end, self.angles)
-
-        # Optional split by word id modulo K
+        # Build samples:
+        all_samples = _iter_samples(self.w_start, self.w_end, self.signers, self.angles)
         self.samples = all_samples
 
-        if self.drop_failures:
-            self.samples = self._prefilter_existing(self.samples)
-
-    def _prefilter_existing(self, samples: List[Sample]) -> List[Sample]:
-        """
-        Light prefilter: check the required assets exist for the stem.
-        This avoids crashing mid-epoch for missing files.
-        """
-        from preprocess.preprocess_clip import VIDEO_ROOT, KEYPOINT_ROOT
-
-        kept: List[Sample] = []
-        for s in samples:
-            video = VIDEO_ROOT / f"{s.stem}.mp4"
-            morph = MORPHEME_ROOT / f"{s.stem}_morpheme.json"
-            kpdir = KEYPOINT_ROOT / s.stem
-            if video.exists() and morph.exists() and kpdir.exists():
-                kept.append(s)
-        return kept
 
     def __len__(self) -> int:
         return len(self.samples)

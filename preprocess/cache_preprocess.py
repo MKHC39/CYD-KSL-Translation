@@ -13,7 +13,7 @@ from preprocess.preprocess_clip import preprocess_stem
 
 
 DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")
-
+P_LIST = list(range(1, 17))
 
 @dataclass(frozen=True)
 class CacheItem:
@@ -22,11 +22,13 @@ class CacheItem:
     angle: str
 
 
-def iter_stems(w_start: int, w_end: int, angles: Sequence[str]) -> Iterable[CacheItem]:
-    for w in range(w_start, w_end + 1):
-        for a in angles:
-            stem = f"NIA_SL_WORD{w:04d}_REAL01_{a}"
-            yield CacheItem(stem=stem, w=w, angle=a)
+def iter_stems(w_start: int, w_end: int, p_list: Sequence[int], angles: Sequence[str]) -> Iterable[CacheItem]:
+    for p in p_list:
+        for w in range(w_start, w_end + 1):
+            for a in angles:
+                stem = f"NIA_SL_WORD{w:04d}_REAL{p:02d}_{a}"
+                yield CacheItem(stem=stem, w=w, angle=a)
+
 
 
 def clip_chw01_to_uint8_thwc(clip: torch.Tensor) -> np.ndarray:
@@ -88,7 +90,7 @@ def build_cache(
     fail = 0
     skipped = 0
 
-    for item in iter_stems(w_start, w_end, angles):
+    for item in iter_stems(w_start, w_end, P_LIST, angles):
         out_path = cache_root / f"{item.stem}.npz"
         if out_path.exists() and not overwrite:
             skipped += 1
