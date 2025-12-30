@@ -18,7 +18,8 @@ from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple, Optional
 import numpy as np
 import torch
 
-from preprocess.preprocess_clip import preprocess_stem
+#from preprocess.preprocess_clip import preprocess_stem
+from preprocess.zipped_preprocess import preprocess_stem
 
 DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")
 
@@ -279,8 +280,8 @@ if __name__ == "__main__":
         # "test": (...)               # if you add later
     }
 
-    W_START = 1501
-    W_END   = 3000
+    W_START = int(input("w_start = ?"))
+    W_END   = int(input("w_end = ?"))
     ANGLES  = DEFAULT_ANGLES
 
     STEP = 1

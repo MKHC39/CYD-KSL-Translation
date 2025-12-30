@@ -10,6 +10,7 @@ import torch
 
 # Your existing entrypoint
 from preprocess.preprocess_clip import preprocess_stem
+#from zipped_preprocess import preprocess_stem
 
 
 DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")

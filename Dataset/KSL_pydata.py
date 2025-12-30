@@ -104,8 +104,8 @@ class KSLFeeder(Dataset):
             # Your controls (via feeder_args)
             cache_root: str = r"C:\Users\CHOI\Downloads\KSL Word DataSet\cached_npz",
             use_cache: bool = True,
-            w_start: int = 1501,
-            w_end: int = 1510,
+            w_start: int = 1,
+            w_end: int = 100,
             angles: Sequence[str] = DEFAULT_ANGLES,
 
             # NEW: signer split (train=1..16, dev/test=17..18 by default)

@@ -8,7 +8,6 @@ import torch
 from .frame_extract import pull_video_items
 from .border import crop_valid, crop_bounds
 import re
-from pathlib import Path
 
 from pathlib import Path
 
@@ -17,6 +16,19 @@ VAL_ROOT   = Path(r"D:\수어 영상\수어 영상\2.Validation")
 
 
 _STEM_RE = re.compile(r"^NIA_SL_WORD(?P<w>\d{4})_REAL(?P<p>\d{2})_(?P<a>[DFLRU])$")
+
+
+# ----------------- Video / crop constants -----------------
+IMG_W = 1920            # legacy
+IMG_H = 1080            # legacy
+MARGIN_PX = 40
+STEP = 1
+# ResNet input size
+OUT_SIZE = 256
+
+IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)  # RGB
+IMAGENET_STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)  # RGB
+
 
 def parse_stem(stem: str) -> tuple[int, int, str]:
     m = _STEM_RE.match(stem)
@@ -37,23 +49,12 @@ def roots_for_signer(p: int) -> tuple[Path, Path, Path]:
         keypoint_root = VAL_ROOT / fr"[라벨]09_real_word_keypoint\keypoint\{p:02d}"
         return video_root, morpheme_root, keypoint_root
 
-    # training (1..16)
     q = 2 * p
     video_root    = TRAIN_ROOT / fr"[원천]{q:02d}_real_word_video\{p:02d}-1"
     morpheme_root = TRAIN_ROOT / fr"[라벨]01_real_word_morpheme\morpheme\{p:02d}"
     keypoint_root = TRAIN_ROOT / fr"[라벨]{p:02d}_real_word_keypoint\{p:02d}"
     return video_root, morpheme_root, keypoint_root
 
-# ----------------- Video / crop constants -----------------
-IMG_W = 1920            # legacy
-IMG_H = 1080            # legacy
-MARGIN_PX = 40
-STEP = 1
-# ResNet input size
-OUT_SIZE = 256
-
-IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)  # RGB
-IMAGENET_STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)  # RGB
 
 
 def load_morpheme(morpheme_path: Path) -> Tuple[float, float, str]:
