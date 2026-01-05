@@ -1,0 +1,5 @@
+dataset_root: ./dataset/KSL
+dict_path: ./preprocess/KSL/gloss_dict.npy
+evaluation_dir: ./evaluation/slr_eval
+evaluation_prefix: KSL-groundtruth
+task: islr
