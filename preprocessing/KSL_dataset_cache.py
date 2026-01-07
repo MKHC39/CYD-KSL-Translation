@@ -316,7 +316,7 @@ if __name__ == "__main__":
 
     STEP = 1
     MARGIN_PX = 40
-    OVERWRITE = False
+    OVERWRITE = True
 
     # Recommended: build vocab from train only, and error if dev has unseen labels
     VOCAB_SOURCE = "train"          # "train" or "all"
