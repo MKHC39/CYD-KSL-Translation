@@ -1,0 +1,198 @@
+diff --git a/dataset/KSL_pydata.py b/dataset/KSL_pydata.py
+index db4271a..6468011 100644
+--- a/dataset/KSL_pydata.py
++++ b/dataset/KSL_pydata.py
+@@ -36,6 +36,9 @@ from torch.utils.data import Dataset
+ #from . import dataloader_video
+ from utils import video_augmentation
+ 
++kernel_sizes = None
++
++
+ DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")
+ DEFAULT_SIGNERS_TRAIN = tuple(range(1, 17))   # 1..16
+ DEFAULT_SIGNERS_DEV   = (17, 18)
+@@ -123,13 +126,21 @@ class KSLFeeder(Dataset):
+         self.prefix = prefix
+         self.dataset = dataset
+         self.mode = str(mode)
+-        self.transform_mode = "train" if transform_mode else "test"
++
++
++        self.transform_mode = "train" if transform_mode else "train"
+ 
+         # CorrNet-style aug params (match BaseFeeder defaults)
+         self.frame_interval = int(frame_interval)
+         self.input_size = int(input_size)
+         self.image_scale = image_scale
+-        info_dict = np.load(f"./preprocess/{dataset}/{mode}_info.npy", allow_pickle=True).item()
++        mode_l = str(mode).lower()
++        info_mode = "dev" if mode_l in ("test", "val", "valid", "validation") else mode_l
++
++        info_dict = np.load(
++            f"/mnt/c/Workplace/workspaces/ksl/preprocess/{dataset}/{info_mode}_info.npy",
++            allow_pickle=True
++        ).item()
+ 
+         items = [info_dict[k] for k in sorted(info_dict.keys())]
+ 
+@@ -173,9 +184,8 @@ class KSLFeeder(Dataset):
+         self.data_aug = self.transform()
+ 
+         # CorrNet temporal padding expects a module-level kernel_sizes list
+-        self._kernel_sizes = list(kernel_size) if kernel_size is not None else [1]
+-        if kernel_size is not None:
+-            dataloader_video.kernel_sizes = list(kernel_size)
++        global kernel_sizes
++        kernel_sizes = list(kernel_size) if kernel_size is not None else [1]
+ 
+         # Build samples:
+         all_samples = _iter_samples(self.w_start, self.w_end, self.signers, self.angles)
+@@ -213,13 +223,69 @@ class KSLFeeder(Dataset):
+         #    dataloader_video.kernel_sizes = self._kernel_sizes
+ 
+         fi = self.inputs_list[idx]
++        stem = fi["fileid"]  # <-- this is the stem
++
+         cache_path = Path(fi["npz"])
+         with np.load(cache_path, allow_pickle=False) as pack:
+             video = pack["video"]
+             label_id = int(pack["label_id"])
+ 
+-        # return format compatible with CorrNet-style training loop
+-        return video, label_id, fi["original_info"]
++        label_list = [label_id]
++        video, label_list = self.normalize(video, label_list, file_id=stem)
++        label = torch.LongTensor(label_list)
++
++        return video, label, fi["original_info"]
++
++    @staticmethod
++    def collate_fn(batch):
++        batch = [item for item in sorted(batch, key=lambda x: len(x[0]), reverse=True)]
++        video, label, info = list(zip(*batch))
++
++        left_pad = 0
++        last_stride = 1
++        total_stride = 1
++        for layer_idx, ks in enumerate(kernel_sizes):
++            if ks[0] == 'K':
++                left_pad = left_pad * last_stride
++                left_pad += int((int(ks[1]) - 1) / 2)
++            elif ks[0] == 'P':
++                last_stride = int(ks[1])
++                total_stride = total_stride * last_stride
++        if len(video[0].shape) > 3:
++            max_len = len(video[0])
++            video_length = torch.LongTensor(
++                [np.ceil(len(vid) / total_stride) * total_stride + 2 * left_pad for vid in video])
++            right_pad = int(np.ceil(max_len / total_stride)) * total_stride - max_len + left_pad
++            max_len = max_len + left_pad + right_pad
++            padded_video = [torch.cat(
++                (
++                    vid[0][None].expand(left_pad, -1, -1, -1),
++                    vid,
++                    vid[-1][None].expand(max_len - len(vid) - left_pad, -1, -1, -1),
++                )
++                , dim=0)
++                for vid in video]
++            padded_video = torch.stack(padded_video)
++        else:
++            max_len = len(video[0])
++            video_length = torch.LongTensor([len(vid) for vid in video])
++            padded_video = [torch.cat(
++                (
++                    vid,
++                    vid[-1][None].expand(max_len - len(vid), -1),
++                )
++                , dim=0)
++                for vid in video]
++            padded_video = torch.stack(padded_video).permute(0, 2, 1)
++        label_length = torch.LongTensor([len(lab) for lab in label])
++        if max(label_length) == 0:
++            return padded_video, video_length, [], [], info
++        else:
++            padded_label = []
++            for lab in label:
++                padded_label.extend(lab)
++            padded_label = torch.LongTensor(padded_label)
++            return padded_video, video_length, padded_label, label_length, info
+ 
+ 
+ 
+@@ -244,6 +310,7 @@ class MiniFeeder(Dataset):
+             video = pack["video"]
+             label_id = int(pack["label_id"])
+ 
++
+         # return format compatible with CorrNet-style training loop
+         return video, label_id, fi["original_info"]
+ 
+diff --git a/modules/__init__.py b/modules/__init__.py
+index 5cb6514..0c0cd5f 100644
+--- a/modules/__init__.py
++++ b/modules/__init__.py
+@@ -1,2 +1,2 @@
+-from .BiLSTM import BiLSTMLayer
+-from .tconv import TemporalConv
+\ No newline at end of file
++from .BiLSTM import BiLSTMLayer
++from .tconv import TemporalConv
+diff --git a/slr_network.py b/slr_network.py
+index ab6bac4..8c7863c 100644
+--- a/slr_network.py
++++ b/slr_network.py
+@@ -74,6 +74,24 @@ class SLRModel(nn.Module):
+                        for idx, lgt in enumerate(len_x)])
+         return x
+ 
++    @staticmethod
++    def masked_mean_pool_time_major(seq: torch.Tensor, lens: torch.Tensor) -> torch.Tensor:
++        """
++        seq: (T, B, D)
++        lens: (B,) valid lengths
++        returns: (B, D)
++        """
++        # TemporalConv returns lens on CPU; move to seq device for masking
++        lens = lens.to(device=seq.device)
++
++        T, B, D = seq.shape
++        t = torch.arange(T, device=seq.device).unsqueeze(1)  # (T,1)
++        mask = (t < lens.unsqueeze(0)).unsqueeze(-1)  # (T,B,1) boolean
++
++        seq = seq.masked_fill(~mask, 0.0)
++        denom = lens.clamp(min=1).unsqueeze(1).to(seq.dtype)  # (B,1)
++        return seq.sum(dim=0) / denom  # (B,D)
++
+     def forward(self, x, len_x, label=None, label_lgt=None):
+         if len(x.shape) == 5:
+             # videos
+@@ -93,12 +111,15 @@ class SLRModel(nn.Module):
+         tm_outputs = self.temporal_model(x, lgt)
+         outputs = self.classifier(tm_outputs['predictions'])
+ 
++        clip_logits = self.masked_mean_pool_time_major(outputs, lgt)  # (B,num_classes)
++
+         return {
+             #"framewise_features": framewise,
+             #"visual_features": x,
+             "feat_len": lgt,
+             "conv_logits": conv1d_outputs['conv_logits'],
+             "sequence_logits": outputs,
++            "clip_logits": clip_logits,
+             "loss_LiftPool_u": conv1d_outputs['loss_LiftPool_u'],
+             "loss_LiftPool_p": conv1d_outputs['loss_LiftPool_p'],
+         }
+diff --git a/utils/__init__.py b/utils/__init__.py
+new file mode 100644
+index 0000000..2bfbdfa
+--- /dev/null
++++ b/utils/__init__.py
+@@ -0,0 +1,7 @@
++from .device import GpuDataParallel
++from .decode import Decode
++from .optimizer import Optimizer
++from .pack_code import pack_code
++from .parameters import get_parser
++from .random_state import RandomState
++from .record import Recorder
