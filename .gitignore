@@ -24,3 +24,6 @@ __pycache__/
 # CorrNet Remnant
 CorrNet+/
 work_dir/
+
+# Jupyter
+notebook/
