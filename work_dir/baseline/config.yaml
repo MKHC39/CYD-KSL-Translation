@@ -34,7 +34,7 @@ model: slr_network.SLRModel
 model_args:
   c2d_type: resnet18
   conv_type: 2
-  num_classes: 100
+  num_classes: 30
   share_classifier: true
   use_bn: 1
   weight_norm: true

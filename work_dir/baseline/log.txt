@@ -1,4 +1,98 @@
-[ Wed Jan  7 17:40:09 2026 ] Parameters:
-{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': 0, 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'python', 'feeder': 'dataset.KSL_pydata.KSLFeeder', 'dataset': 'KSL', 'dataset_info': {'dataset_root': './dataset/KSL', 'dict_path': './preprocess/KSL/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'KSL-groundtruth', 'task': 'islr'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': './dataset/KSL', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 105, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': None, 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 4, 'test_batch_size': 4, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 0, 'nesterov': False}, 'num_epoch': 80}
+[ Wed Jan  7 18:12:27 2026 ] Parameters:
+{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': 0, 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'python', 'feeder': 'dataset.KSL_pydata.KSLFeeder', 'dataset': 'KSL', 'dataset_info': {'dataset_root': './dataset/KSL', 'dict_path': './preprocess/KSL/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'KSL-groundtruth', 'task': 'islr'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': './dataset/KSL', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 21, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': None, 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 4, 'test_batch_size': 4, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 0, 'nesterov': False}, 'num_epoch': 80}
 
-[ Wed Jan  7 17:40:19 2026 ] 	[ISLR] Epoch: 0, Batch(0/1999) done. Loss: 4.64032936  lr:0.000100
+[ Wed Jan  7 18:12:42 2026 ] 	[ISLR] Epoch: 0, Batch(0/399) done. Loss: 2.92784977  lr:0.000100
+[ Wed Jan  7 18:27:00 2026 ] 	[ISLR] Mean training loss: 1.6424021815.
+[ Wed Jan  7 18:27:13 2026 ] Dev WER: 14.07%
+[ Wed Jan  7 18:27:19 2026 ] Save best model
+[ Wed Jan  7 18:27:19 2026 ] Best_dev: 14.07, Epoch : 0
+[ Wed Jan  7 18:27:28 2026 ] Epoch 0 costs 15 mins 0 seconds
+[ Wed Jan  7 18:27:34 2026 ] 	[ISLR] Epoch: 1, Batch(0/399) done. Loss: 0.64801913  lr:0.000100
+[ Wed Jan  7 18:36:16 2026 ] 	[ISLR] Mean training loss: 0.6907174078.
+[ Wed Jan  7 18:36:26 2026 ] Dev WER: 05.53%
+[ Wed Jan  7 18:36:30 2026 ] Save best model
+[ Wed Jan  7 18:36:30 2026 ] Best_dev: 05.53, Epoch : 1
+[ Wed Jan  7 18:36:31 2026 ] Epoch 1 costs 9 mins 2 seconds
+[ Wed Jan  7 18:36:34 2026 ] 	[ISLR] Epoch: 2, Batch(0/399) done. Loss: 0.06842306  lr:0.000100
+[ Wed Jan  7 18:51:14 2026 ] 	[ISLR] Mean training loss: 0.5021554998.
+[ Wed Jan  7 18:51:26 2026 ] Dev WER: 09.05%
+[ Wed Jan  7 18:51:26 2026 ] Best_dev: 05.53, Epoch : 1
+[ Wed Jan  7 18:51:26 2026 ] Epoch 2 costs 14 mins 55 seconds
+[ Wed Jan  7 18:51:30 2026 ] 	[ISLR] Epoch: 3, Batch(0/399) done. Loss: 0.35698006  lr:0.000100
+[ Wed Jan  7 19:01:52 2026 ] 	[ISLR] Mean training loss: 0.4089513434.
+[ Wed Jan  7 19:02:03 2026 ] Dev WER: 07.54%
+[ Wed Jan  7 19:02:03 2026 ] Best_dev: 05.53, Epoch : 1
+[ Wed Jan  7 19:02:03 2026 ] Epoch 3 costs 10 mins 36 seconds
+[ Wed Jan  7 19:02:05 2026 ] 	[ISLR] Epoch: 4, Batch(0/399) done. Loss: 0.19317107  lr:0.000100
+[ Wed Jan  7 19:13:49 2026 ] 	[ISLR] Mean training loss: 0.3010869938.
+[ Wed Jan  7 19:14:01 2026 ] Dev WER: 04.02%
+[ Wed Jan  7 19:14:07 2026 ] Save best model
+[ Wed Jan  7 19:14:07 2026 ] Best_dev: 04.02, Epoch : 4
+[ Wed Jan  7 19:14:07 2026 ] Epoch 4 costs 12 mins 3 seconds
+[ Wed Jan  7 19:14:10 2026 ] 	[ISLR] Epoch: 5, Batch(0/399) done. Loss: 0.17816453  lr:0.000100
+[ Wed Jan  7 19:30:16 2026 ] 	[ISLR] Mean training loss: 0.2539541422.
+[ Wed Jan  7 19:30:29 2026 ] Dev WER: 09.05%
+[ Wed Jan  7 19:30:29 2026 ] Best_dev: 04.02, Epoch : 4
+[ Wed Jan  7 19:30:34 2026 ] Epoch 5 costs 16 mins 27 seconds
+[ Wed Jan  7 19:30:39 2026 ] 	[ISLR] Epoch: 6, Batch(0/399) done. Loss: 0.67040431  lr:0.000100
+[ Wed Jan  7 19:36:35 2026 ] 	[ISLR] Mean training loss: 0.2553219548.
+[ Wed Jan  7 19:36:45 2026 ] Dev WER: 08.54%
+[ Wed Jan  7 19:36:45 2026 ] Best_dev: 04.02, Epoch : 4
+[ Wed Jan  7 19:36:45 2026 ] Epoch 6 costs 6 mins 11 seconds
+[ Wed Jan  7 19:36:50 2026 ] 	[ISLR] Epoch: 7, Batch(0/399) done. Loss: 0.21533607  lr:0.000100
+[ Wed Jan  7 19:44:09 2026 ] 	[ISLR] Mean training loss: 0.2270466331.
+[ Wed Jan  7 19:44:22 2026 ] Dev WER: 11.06%
+[ Wed Jan  7 19:44:22 2026 ] Best_dev: 04.02, Epoch : 4
+[ Wed Jan  7 19:44:22 2026 ] Epoch 7 costs 7 mins 36 seconds
+[ Wed Jan  7 19:44:24 2026 ] 	[ISLR] Epoch: 8, Batch(0/399) done. Loss: 0.07044706  lr:0.000100
+[ Wed Jan  7 19:53:17 2026 ] 	[ISLR] Mean training loss: 0.2335915443.
+[ Wed Jan  7 19:53:30 2026 ] Dev WER: 01.51%
+[ Wed Jan  7 19:53:33 2026 ] Save best model
+[ Wed Jan  7 19:53:33 2026 ] Best_dev: 01.51, Epoch : 8
+[ Wed Jan  7 19:53:33 2026 ] Epoch 8 costs 9 mins 10 seconds
+[ Wed Jan  7 19:53:36 2026 ] 	[ISLR] Epoch: 9, Batch(0/399) done. Loss: 0.62688535  lr:0.000100
+[ Wed Jan  7 20:05:11 2026 ] 	[ISLR] Mean training loss: 0.1875720541.
+[ Wed Jan  7 20:05:24 2026 ] Dev WER: 08.54%
+[ Wed Jan  7 20:05:24 2026 ] Best_dev: 01.51, Epoch : 8
+[ Wed Jan  7 20:05:24 2026 ] Epoch 9 costs 11 mins 51 seconds
+[ Wed Jan  7 20:05:27 2026 ] 	[ISLR] Epoch: 10, Batch(0/399) done. Loss: 0.17062630  lr:0.000100
+[ Wed Jan  7 20:23:54 2026 ] 	[ISLR] Mean training loss: 0.1976841260.
+[ Wed Jan  7 20:24:07 2026 ] Dev WER: 07.04%
+[ Wed Jan  7 20:24:07 2026 ] Best_dev: 01.51, Epoch : 8
+[ Wed Jan  7 20:24:11 2026 ] Epoch 10 costs 18 mins 46 seconds
+[ Wed Jan  7 20:24:16 2026 ] 	[ISLR] Epoch: 11, Batch(0/399) done. Loss: 0.14353405  lr:0.000100
+[ Wed Jan  7 20:36:46 2026 ] 	[ISLR] Mean training loss: 0.1512803402.
+[ Wed Jan  7 20:36:58 2026 ] Dev WER: 04.52%
+[ Wed Jan  7 20:36:58 2026 ] Best_dev: 01.51, Epoch : 8
+[ Wed Jan  7 20:36:58 2026 ] Epoch 11 costs 12 mins 47 seconds
+[ Wed Jan  7 20:37:02 2026 ] 	[ISLR] Epoch: 12, Batch(0/399) done. Loss: 0.40661141  lr:0.000100
+[ Wed Jan  7 20:45:16 2026 ] 	[ISLR] Mean training loss: 0.1862834556.
+[ Wed Jan  7 20:45:29 2026 ] Dev WER: 13.07%
+[ Wed Jan  7 20:45:29 2026 ] Best_dev: 01.51, Epoch : 8
+[ Wed Jan  7 20:45:29 2026 ] Epoch 12 costs 8 mins 30 seconds
+[ Wed Jan  7 20:45:33 2026 ] 	[ISLR] Epoch: 13, Batch(0/399) done. Loss: 0.00674770  lr:0.000100
+[ Wed Jan  7 23:22:26 2026 ] 	[ISLR] Mean training loss: 0.1480962209.
+[ Wed Jan  7 23:22:46 2026 ] Dev WER: 01.51%
+[ Wed Jan  7 23:22:46 2026 ] Best_dev: 01.51, Epoch : 8
+[ Wed Jan  7 23:22:46 2026 ] Epoch 13 costs 157 mins 17 seconds
+[ Wed Jan  7 23:22:49 2026 ] 	[ISLR] Epoch: 14, Batch(0/399) done. Loss: 0.10622881  lr:0.000100
+[ Thu Jan  8 03:29:49 2026 ] 	[ISLR] Mean training loss: 0.1148624045.
+[ Thu Jan  8 03:30:04 2026 ] Dev WER: 02.51%
+[ Thu Jan  8 03:30:04 2026 ] Best_dev: 01.51, Epoch : 8
+[ Thu Jan  8 03:30:04 2026 ] Epoch 14 costs 247 mins 18 seconds
+[ Thu Jan  8 03:30:08 2026 ] 	[ISLR] Epoch: 15, Batch(0/399) done. Loss: 0.03159767  lr:0.000100
+[ Thu Jan  8 03:48:00 2026 ] 	[ISLR] Mean training loss: 0.0853031459.
+[ Thu Jan  8 03:48:13 2026 ] Dev WER: 03.02%
+[ Thu Jan  8 03:48:13 2026 ] Best_dev: 01.51, Epoch : 8
+[ Thu Jan  8 03:48:15 2026 ] Epoch 15 costs 18 mins 10 seconds
+[ Thu Jan  8 03:48:19 2026 ] 	[ISLR] Epoch: 16, Batch(0/399) done. Loss: 0.01046345  lr:0.000100
+[ Thu Jan  8 03:57:01 2026 ] 	[ISLR] Mean training loss: 0.1515085118.
+[ Thu Jan  8 03:57:11 2026 ] Dev WER: 06.03%
+[ Thu Jan  8 03:57:11 2026 ] Best_dev: 01.51, Epoch : 8
+[ Thu Jan  8 03:57:11 2026 ] Epoch 16 costs 8 mins 56 seconds
+[ Thu Jan  8 03:57:14 2026 ] 	[ISLR] Epoch: 17, Batch(0/399) done. Loss: 0.05766881  lr:0.000100
+[ Thu Jan  8 08:28:22 2026 ] 	[ISLR] Mean training loss: 0.1381881515.
+[ Thu Jan  8 08:28:41 2026 ] Dev WER: 02.01%
+[ Thu Jan  8 08:28:41 2026 ] Best_dev: 01.51, Epoch : 8
+[ Thu Jan  8 08:28:41 2026 ] Epoch 17 costs 271 mins 30 seconds
+[ Thu Jan  8 08:28:45 2026 ] 	[ISLR] Epoch: 18, Batch(0/399) done. Loss: 0.04185035  lr:0.000100
