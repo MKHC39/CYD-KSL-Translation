@@ -83,4 +83,4 @@
 | [**AUTSL**](https://cvml.ankara.edu.tr/datasets/)            | Turkish     | 226     | 38,336    | Videos & Depth from Kinect  | isolated |
 
 ## Summary
-- **[Table of results](https://docs.google.com/spreadsheets/d/1GMigSrAvbKFR-B0k2Yud1iNjaEvC-MK_sDVotKH0x-M/edit?usp=sharing)**
+- **[Table of results](https://docs.google.com/spreadsheets/d/1f13CcIfL5yeix0y4V9zsm6BcErOG8zN7bMymXX_lBT8/edit?usp=sharing)**
