@@ -235,23 +235,48 @@ def sample_error_windows(
     rows_before: int = 1,
     rows_after: int = 2,
     cols_before: int = 2,
-    cols_after: int = 3,
+    cols_after_default: int = 3,
     min_col_start: int = 0,
     min_col_end: int = 8,
+    code_cols_after: Optional[Dict[str, int]] = None,
 ) -> list[dict[str, Any]]:
     """
-    Samples windows around each error.
-    - The column window is centred on the error 'col' when available.
-    - Guarantees at least [min_col_start:min_col_end) width if 'col' is missing.
-    Returns list of dicts with 'window' and (optionally) a styled 'window_hi'.
+    Samples windows around each error and highlights the exact cell when possible.
+
+    - Column window centres on the error 'col' (with before/after margin).
+    - For certain error codes, automatically expands columns to the right.
+    - Guarantees at least [min_col_start:min_col_end) if 'col' is missing.
+    - Returns list of dicts with:
+        source, json, code, message, row, col, row_range, col_range, window, window_hi
     """
+
+    if code_cols_after is None:
+        # Wider right-context for cases where the "next non-NaN to the right" matters
+        code_cols_after = {
+            "MISSING_END_VALUE": 15,
+            "MISSING_END_ROW": 10,
+            "END_BEFORE_START": 8,
+            "NONNUMERIC_END": 10,
+            "NONNUMERIC_START": 8,
+        }
+
     samples: list[dict[str, Any]] = []
     if errors_df.empty:
         return samples
 
-    # Prioritise a few common actionable codes (optional)
-    priority = ["READ_FAIL", "MISSING_END_ROW", "MISSING_END_VALUE", "END_BEFORE_START",
-                "NONNUMERIC_START", "NONNUMERIC_END"]
+    # Prioritise actionable codes first (optional)
+    priority = [
+        "READ_FAIL",
+        "MISSING_END_ROW",
+        "MISSING_END_VALUE",
+        "END_BEFORE_START",
+        "NONNUMERIC_START",
+        "NONNUMERIC_END",
+        "MISSING_SENTENCE",
+        "EMPTY_SENTENCE",
+        "MISSING_JSON",
+        "EMPTY_START_ROW",
+    ]
     dfp = errors_df.copy()
     dfp["_prio"] = dfp["code"].apply(lambda x: priority.index(x) if x in priority else len(priority))
     dfp = dfp.sort_values(["_prio"]).drop(columns=["_prio"])
@@ -260,6 +285,7 @@ def sample_error_windows(
         src = e.get("source")
         r = e.get("row")
         c = e.get("col")
+        code = e.get("code")
 
         base = {k: e.get(k) for k in ["source", "json", "code", "message", "row", "col"]}
 
@@ -278,6 +304,9 @@ def sample_error_windows(
         r0 = max(0, r - rows_before)
         r1 = min(len(df), r + rows_after + 1)
 
+        # Code-aware column expansion to the right
+        cols_after = code_cols_after.get(code, cols_after_default)
+
         # Column window
         if c_int is None:
             c0 = min_col_start
@@ -287,24 +316,31 @@ def sample_error_windows(
             c1 = min(df.shape[1], c_int + cols_after + 1)
 
             # Ensure a minimum visible width even if c_int is tiny
-            if c1 - c0 < (min_col_end - min_col_start):
-                c1 = min(df.shape[1], c0 + (min_col_end - min_col_start))
+            min_width = (min_col_end - min_col_start)
+            if c1 - c0 < min_width:
+                c1 = min(df.shape[1], c0 + min_width)
 
         window = df.iloc[r0:r1, c0:c1]
 
-        # Add a styled version highlighting the exact cell, if it’s inside the slice
+        # Styled version highlighting the exact cell, if it’s inside the slice
         window_hi = None
         if c_int is not None and (r0 <= r < r1) and (c0 <= c_int < c1):
             rr = r - r0
             cc = c_int - c0
 
-            def _hi(data):
+            def _hi(data: pd.DataFrame) -> pd.DataFrame:
                 styles = pd.DataFrame("", index=data.index, columns=data.columns)
                 styles.iat[rr, cc] = "background-color: yellow; font-weight: bold;"
                 return styles
 
             window_hi = window.style.apply(_hi, axis=None)
 
-        samples.append({**base, "col_range": (c0, c1), "row_range": (r0, r1), "window": window, "window_hi": window_hi})
+        samples.append({
+            **base,
+            "row_range": (r0, r1),
+            "col_range": (c0, c1),
+            "window": window,
+            "window_hi": window_hi,
+        })
 
     return samples
