@@ -11,6 +11,7 @@
 
 # Cache Folder
 cache/
+preprocess/
 
 # venv
 .venv/
