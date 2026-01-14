@@ -316,16 +316,23 @@ def folder_df(folder: Path):
 
 
 _TRAILING_DIGITS_RE = re.compile(r"\d+$")
+_TRAILING_HASHES_RE = re.compile(r"#+$")
 
-def strip_trailing_digits(token: str) -> str:
-    """
-    Strip trailing digits only if the token has at least one non-digit character.
-    Keeps pure-number tokens (e.g., phone numbers) unchanged.
-    """
+def normalise_gloss_token(token: str) -> str:
     token = str(token).strip()
+    if not token:
+        return token
+
+    # Remove trailing '#' markers (e.g., "오늘1#" -> "오늘1")
+    token = _TRAILING_HASHES_RE.sub("", token).strip()
+
+    # Keep pure numbers (e.g., phone number chunks)
     if token.isdigit():
         return token
-    return _TRAILING_DIGITS_RE.sub("", token)
+
+    # Remove trailing occurrence index digits (e.g., "오늘12" -> "오늘")
+    token = _TRAILING_DIGITS_RE.sub("", token).strip()
+    return token
 
 
 def sent_gloss(
@@ -336,9 +343,9 @@ def sent_gloss(
         sep: str = " ",
         dropna_gloss: bool = True,
         keep_no_segments: bool = False,
-) -> Dict[int, Tuple[str, Union[List[str], str]]]:
+) -> Dict[int, Tuple[str, Union[List[str], str], str]]:
     """
-    Build: {entry_id: (sentence, gloss_seq)}
+    Build: {entry_id: (sentence, gloss_seq, src)}
 
     - sentence comes from meta_df
     - gloss_seq comes from segments_df rows matching entry_id, sorted by ord
@@ -358,7 +365,7 @@ def sent_gloss(
     if missing_seg:
         raise ValueError(f"segments_df missing required columns: {sorted(missing_seg)}")
 
-    m = meta_df[["entry_id", "sentence"]].copy()
+    m = meta_df[["entry_id", "sentence", "source_folder"]].copy()
     s = segments_df[["entry_id", "gloss", "ord"]].copy()
 
     # Normalise types
@@ -370,7 +377,7 @@ def sent_gloss(
     if dropna_gloss:
         s = s.dropna(subset=["gloss"])
     s["gloss"] = s["gloss"].astype(str).str.strip()
-    s["gloss"] = s["gloss"].map(strip_trailing_digits).str.strip()
+    s["gloss"] = s["gloss"].map(normalise_gloss_token).str.strip()
     if dropna_gloss:
         s = s[s["gloss"] != ""]
 
@@ -378,14 +385,14 @@ def sent_gloss(
     s = s.sort_values(["entry_id", "ord"], kind="mergesort")
     gloss_by_id = s.groupby("entry_id")["gloss"].apply(list)
 
-    out: Dict[int, Tuple[str, Union[List[str], str]]] = {}
+    out: Dict[int, Tuple[str, Union[List[str], str],str]] = {}
 
-    for entry_id, sentence in zip(m["entry_id"], m["sentence"]):
+    for entry_id, sentence, src in zip(m["entry_id"], m["sentence"], m["source_folder"]):
         tokens = gloss_by_id.get(entry_id, [])
         if (not keep_no_segments) and (len(tokens) == 0):
             continue
         gloss_seq: Union[List[str], str] = tokens if gloss_as_list else sep.join(tokens)
-        out[int(entry_id)] = (sentence, gloss_seq)
+        out[int(entry_id)] = (sentence, gloss_seq, str(src))
 
     return out
 
@@ -461,13 +468,18 @@ def merge_folder_outputs(root: Path, *, verbose: bool = True):
     return meta_all, seg_all, drops_all
 
 def save_jsonl(
-    data: dict[int, tuple[str, str]],
+    data: dict[int, tuple[str, str, str]],
     out_path: Path,
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
-        for entry_id, (sentence, gloss_seq) in data.items():
-            obj = {"entry_id": entry_id, "sentence": sentence, "gloss": gloss_seq}
+        for entry_id, (sentence, gloss_seq, source_folder) in data.items():
+            obj = {
+                "entry_id": entry_id,
+                "sentence": sentence,
+                "gloss": gloss_seq,
+                "source_folder": source_folder
+            }
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
@@ -481,7 +493,7 @@ if __name__ == "__main__":
 
     # Save
     base = Path(__file__).resolve().parent
-    out_path = base / "ksl_sentence_gloss.json"
+    out_path = base / "ksl_sentence_gloss.jsonl"
     serialisable = {str(k): [v[0], v[1]] for k, v in merged_dict.items()}
 
     save_jsonl(merged_dict, out_path)
