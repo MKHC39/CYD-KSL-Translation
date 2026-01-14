@@ -1,6 +1,9 @@
 from __future__ import annotations
-from typing import Any, Dict, Tuple, Optional, List
+from typing import Any, Dict, Tuple, Optional, List, Union
 import pandas as pd
+
+import re
+import json
 
 from pathlib import Path
 import subprocess
@@ -290,7 +293,7 @@ def dict_to_dataframes(data: Dict[str, Dict[str, Any]]) -> tuple[pd.DataFrame, p
     return meta_df, segments_df
 
 
-def main(folder: Path):
+def folder_df(folder: Path):
     files = folder.glob("*.xlsx")
     all_data = {}
     all_drops = []
@@ -302,13 +305,188 @@ def main(folder: Path):
         if not drops.empty:
             all_drops.append(drops)
 
-    drops_df = pd.concat(all_drops, ignore_index=True)
+    if all_drops:
+        drops_df = pd.concat(all_drops, ignore_index=True)
+    else:
+        drops_df = pd.DataFrame()
 
     meta_df, segments_df = dict_to_dataframes(all_data)
 
     return meta_df, segments_df, drops_df
 
+
+_TRAILING_DIGITS_RE = re.compile(r"\d+$")
+
+def strip_trailing_digits(token: str) -> str:
+    """
+    Strip trailing digits only if the token has at least one non-digit character.
+    Keeps pure-number tokens (e.g., phone numbers) unchanged.
+    """
+    token = str(token).strip()
+    if token.isdigit():
+        return token
+    return _TRAILING_DIGITS_RE.sub("", token)
+
+
+def sent_gloss(
+        meta_df: pd.DataFrame,
+        segments_df: pd.DataFrame,
+        *,
+        gloss_as_list: bool = False,
+        sep: str = " ",
+        dropna_gloss: bool = True,
+        keep_no_segments: bool = False,
+) -> Dict[int, Tuple[str, Union[List[str], str]]]:
+    """
+    Build: {entry_id: (sentence, gloss_seq)}
+
+    - sentence comes from meta_df
+    - gloss_seq comes from segments_df rows matching entry_id, sorted by ord
+    - gloss_seq is a list by default (gloss_as_list=True); otherwise a sep-joined string
+
+    Expected columns:
+      meta_df:     entry_id, sentence, json
+      segments_df: entry_id, label, gloss, start, end, ord
+    """
+    required_meta = {"entry_id", "sentence"}
+    required_seg = {"entry_id", "gloss", "ord"}
+
+    missing_meta = required_meta - set(meta_df.columns)
+    missing_seg = required_seg - set(segments_df.columns)
+    if missing_meta:
+        raise ValueError(f"meta_df missing required columns: {sorted(missing_meta)}")
+    if missing_seg:
+        raise ValueError(f"segments_df missing required columns: {sorted(missing_seg)}")
+
+    m = meta_df[["entry_id", "sentence"]].copy()
+    s = segments_df[["entry_id", "gloss", "ord"]].copy()
+
+    # Normalise types
+    m["entry_id"] = m["entry_id"].astype(int)
+    s["entry_id"] = s["entry_id"].astype(int)
+    s["ord"] = s["ord"].astype(int)
+
+    # Clean gloss tokens
+    if dropna_gloss:
+        s = s.dropna(subset=["gloss"])
+    s["gloss"] = s["gloss"].astype(str).str.strip()
+    s["gloss"] = s["gloss"].map(strip_trailing_digits).str.strip()
+    if dropna_gloss:
+        s = s[s["gloss"] != ""]
+
+    # Sort by intended order and aggregate tokens per entry_id
+    s = s.sort_values(["entry_id", "ord"], kind="mergesort")
+    gloss_by_id = s.groupby("entry_id")["gloss"].apply(list)
+
+    out: Dict[int, Tuple[str, Union[List[str], str]]] = {}
+
+    for entry_id, sentence in zip(m["entry_id"], m["sentence"]):
+        tokens = gloss_by_id.get(entry_id, [])
+        if (not keep_no_segments) and (len(tokens) == 0):
+            continue
+        gloss_seq: Union[List[str], str] = tokens if gloss_as_list else sep.join(tokens)
+        out[int(entry_id)] = (sentence, gloss_seq)
+
+    return out
+
+
+def iter_xlsx_folders(root: Path):
+    """
+    Yield each unique folder under `root` that contains at least one .xlsx file.
+    """
+    folders = {p.parent for p in root.rglob("*.xlsx")}
+    for folder in sorted(folders):
+        yield folder
+
+
+def merge_folder_outputs(root: Path, *, verbose: bool = True):
+    meta_parts = []
+    seg_parts = []
+    drop_parts = []
+
+    next_id = 0
+    folders_done = 0
+
+    for folder in iter_xlsx_folders(root):
+        meta_df, segments_df, drops_df = folder_df(folder)
+
+        # Normalise types
+        meta_df = meta_df.copy()
+        segments_df = segments_df.copy()
+        meta_df["entry_id"] = meta_df["entry_id"].astype(int)
+        segments_df["entry_id"] = segments_df["entry_id"].astype(int)
+
+        # Map local entry_id -> global entry_id
+        local_ids = meta_df["entry_id"].unique()
+        id_map = {int(lid): int(next_id + i) for i, lid in enumerate(sorted(local_ids))}
+        next_id += len(id_map)
+
+        meta_df["entry_id"] = meta_df["entry_id"].map(id_map)
+        segments_df["entry_id"] = segments_df["entry_id"].map(id_map)
+
+        # Optional provenance
+        meta_df["source_folder"] = str(folder)
+        segments_df["source_folder"] = str(folder)
+
+        meta_parts.append(meta_df)
+        seg_parts.append(segments_df)
+
+        if drops_df is not None and not drops_df.empty:
+            drops_df = drops_df.copy()
+            drops_df["source_folder"] = str(folder)
+            drop_parts.append(drops_df)
+
+        folders_done += 1
+        if verbose:
+            xlsx_count = len(list(folder.glob("*.xlsx")))
+            print(
+                f"[{folders_done:04d}] done: {folder} | "
+                f"xlsx={xlsx_count} | "
+                f"meta_rows={len(meta_df)} | "
+                f"seg_rows={len(segments_df)} | "
+                f"drops_rows={(len(drops_df) if drops_df is not None else 0)} | "
+                f"global_ids_now={next_id}"
+            )
+
+    meta_all = pd.concat(meta_parts, ignore_index=True) if meta_parts else pd.DataFrame()
+    seg_all = pd.concat(seg_parts, ignore_index=True) if seg_parts else pd.DataFrame()
+    drops_all = pd.concat(drop_parts, ignore_index=True) if drop_parts else pd.DataFrame()
+
+    if verbose:
+        print(
+            f"\nFinished. folders={folders_done} | "
+            f"meta_all={len(meta_all)} | seg_all={len(seg_all)} | drops_all={len(drops_all)}"
+        )
+
+    return meta_all, seg_all, drops_all
+
+def save_jsonl(
+    data: dict[int, tuple[str, str]],
+    out_path: Path,
+) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", encoding="utf-8") as f:
+        for entry_id, (sentence, gloss_seq) in data.items():
+            obj = {"entry_id": entry_id, "sentence": sentence, "gloss": gloss_seq}
+            f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+
+
 if __name__ == "__main__":
     win_path = input("Please enter your Windows path: ")
-    folder = wsl_path(win_path)
-    main(folder)
+    root = wsl_path(win_path)
+
+    meta_all, seg_all, drops_all = merge_folder_outputs(root)
+
+    merged_dict = sent_gloss(meta_all, seg_all)
+
+    # Save
+    base = Path(__file__).resolve().parent
+    out_path = base / "ksl_sentence_gloss.json"
+    serialisable = {str(k): [v[0], v[1]] for k, v in merged_dict.items()}
+
+    save_jsonl(merged_dict, out_path)
+
+    print(f"meta_all rows: {len(meta_all)}")
+    print(f"seg_all rows:  {len(seg_all)}")
+    print(f"drops_all rows:{len(drops_all)}")
+    print(f"Saved {len(serialisable)} entries to: {out_path}")

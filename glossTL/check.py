@@ -124,6 +124,8 @@ def validate_workbook_df(df: pd.DataFrame, source: str = "<df>") -> tuple[pd.Dat
                     gv = gloss_row.iat[j]
                     if pd.notna(gv):
                         gloss = str(gv)
+                if gloss == None:
+                    continue
 
                 if ends_row is None:
                     log("NO_END_FOR_START", i, j, "No end row available to pair with this start",
