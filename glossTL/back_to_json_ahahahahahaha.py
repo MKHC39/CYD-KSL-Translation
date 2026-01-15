@@ -11,6 +11,8 @@ def csv_to_jsonl_fixed(in_csv: Path, out_jsonl: Path, pred_col: int = 4) -> None
       col 2 = gloss
       col 3 = reference sentence
       col 4 = GPT 5.2 output
+      col 5 = GPT-oss output
+      col 6 = Gemini 3 Flash output
       col 7 = Gemini 3 Pro output
     pred_col: choose 4 or 7 depending on which model you want as "pred"
     """
@@ -46,7 +48,7 @@ def csv_to_jsonl_fixed(in_csv: Path, out_jsonl: Path, pred_col: int = 4) -> None
 if __name__ == "__main__":
     here = Path(__file__).resolve().parent
     in_csv = here / "data.csv"
-    out_jsonl = here / "data.jsonl"
+    out_jsonl = here / "GeminiP-data.jsonl"
 
     # pred_col=4 for GPT 5.2, pred_col=7 for Gemini 3 Pro
-    csv_to_jsonl_fixed(in_csv, out_jsonl, pred_col=4)
+    csv_to_jsonl_fixed(in_csv, out_jsonl, pred_col=7)

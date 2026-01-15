@@ -49,8 +49,14 @@ def main(jsonl_path: Path, model_type: str = "xlm-roberta-large", batch_size: in
 
     print(f"Examples scored: {len(f1_list)}")
     print(f"Mean BERTScore F1: {mean_f1:.6f}")
+    return mean_f1
 
 
 if __name__ == "__main__":
-    jsonl_path = Path(__file__).resolve().parent / "preds.jsonl"
-    main(jsonl_path)
+    datalist = []
+    for i in ['GPT5.2-data.jsonl','GPT-oss-data.jsonl','GeminiF-data.jsonl','GeminiP-data.jsonl']:
+        jsonl_path = Path(__file__).resolve().parent / i
+        data = main(jsonl_path)
+        datalist.append(data)
+    print(['5.2', 'oss', 'F', 'P'])
+    print(datalist)
