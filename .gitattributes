@@ -1,5 +1,4 @@
-*.json filter=lfs diff=lfs merge=lfs -text
-*.jsonl filter=lfs diff=lfs merge=lfs -text
+
 glossTL/jsonl/ksl_sentence_gloss.json filter=lfs diff=lfs merge=lfs -text
 glossTL/old[[:space:]]json/ksl_sentence_gloss.json filter=lfs diff=lfs merge=lfs -text
 glossTL/ksl_sentence_gloss.json filter=lfs diff=lfs merge=lfs -text
