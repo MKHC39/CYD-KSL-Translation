@@ -1,0 +1,3 @@
+[submodule "CYDProject"]
+	path = CYDProject
+	url = https://github.com/MKHC39/CYDProject.git
