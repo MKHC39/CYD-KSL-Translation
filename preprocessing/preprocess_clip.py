@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 import torch
 
-from frame_extract import pull_video_items
-from border import crop_valid, crop_bounds
+from preprocessing.frame_extract import pull_video_items
+from preprocessing.border import crop_valid, crop_bounds
 import re
 
 from pathlib import Path
@@ -156,14 +156,11 @@ def preprocess_stem(
                 raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
 
         kp_path = keypoint_dir / f"{stem}_{frame_idx:012d}_keypoints.json"
-        """
         if not kp_path.exists():
             missing_kp += 1
-            return None             Skip kp detection
-        """
+            return None
 
-        # ok, direction, error = crop_valid(kp_path, img_w, img_h, margin_px=margin_px)
-        ok, direction, error = (True, 'ok', 0)
+        ok, direction, error = crop_valid(kp_path, img_w, img_h, margin_px=margin_px)
         bounds = crop_bounds(ok, direction, error, img_w=img_w, img_h=img_h, margin_px=margin_px)
         if bounds is None:
             discarded_bounds += 1

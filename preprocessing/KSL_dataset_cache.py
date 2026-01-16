@@ -20,7 +20,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple, Optional
 import numpy as np
 import torch
 
-from preprocess_clip import preprocess_stem
+from preprocessing.preprocess_clip import preprocess_stem
 
 DEFAULT_ANGLES: Tuple[str, ...] = ("D", "F", "L", "R", "U")
 

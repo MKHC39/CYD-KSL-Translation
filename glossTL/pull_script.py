@@ -14,11 +14,21 @@ def wsl_path(p: str) -> Path:
     Accepts either:
       - Windows path copied from Explorer:  C:\\Users\\... or D:\\...
       - WSL/Linux path: /mnt/c/... etc
+      - WSL UNC path: \\\\wsl.localhost\\Distro\\home\\... (from Explorer)
     Returns a valid WSL Path (requires WSL's `wslpath` for Windows inputs).
     """
     s = p.strip().strip('"').strip("'")
     if not s:
         raise ValueError("Empty path")
+
+    # Handle WSL UNC path copied from Windows Explorer
+    # Example: \\wsl.localhost\Ubuntu\home\user\project
+    if r"wsl.localhost" in s.lower():
+        parts = s.split("\\")
+        # ["", "", "wsl.localhost", "Ubuntu", "home", "user", ...]
+        if len(parts) >= 5:
+            s = "/" + "/".join(parts[4:])  # drop \\wsl.localhost\Distro
+            return Path(s)
 
     # Heuristic: Windows drive path like C:\...
     if len(s) >= 3 and s[1] == ":" and (s[2] == "\\" or s[2] == "/"):
@@ -34,7 +44,7 @@ def parse_df(df: pd.DataFrame, source: str ="<df>", fatal_codes: set[str] | None
     Columns: 0 = class/label, 1 = field name, 2.. = payload.
 
     Returns:
-      { json_filename: { "sentence": str|None, "segments": [(label, gloss, start, end), ...] } }
+      { json_filename: { "sentence": str|None, "segments": [(label, gloss, start, end, row, column), ...] } }
     """
     if fatal_codes is None:
         fatal_codes = {
@@ -54,7 +64,7 @@ def parse_df(df: pd.DataFrame, source: str ="<df>", fatal_codes: set[str] | None
 
     current_json: Optional[str] = None
     current_sentence: Optional[str] = None
-    current_segments: list[tuple[str, Optional[str], float, float]] = []
+    current_segments: list[tuple[str, Optional[str], float, float, int, int]] = []
     current_invalid = False
     current_fatal_reasons: set[str] = set()
     current_first_fatal: dict | None = None
@@ -231,7 +241,7 @@ def parse_df(df: pd.DataFrame, source: str ="<df>", fatal_codes: set[str] | None
                     mark_fatal("END_BEFORE_START", row=row, col=j, msg=f"End {end} < Start {start}")
                     continue
 
-                current_segments.append((label, gloss, start, end))
+                current_segments.append((label, gloss, start, end, row, end_col))
 
             # Skip past the paired end row as well
             row += 2
@@ -259,7 +269,7 @@ def dict_to_dataframes(data: Dict[str, Dict[str, Any]]) -> tuple[pd.DataFrame, p
       segments_df: entry_id, label, gloss, start, end, ord
     """
     meta_rows: List[Tuple[int, Optional[str], str]] = []
-    seg_rows: List[Tuple[int, str, Optional[str], float, float, int]] = []
+    seg_rows: List[Tuple[int, str, Optional[str], float, float, int, int, int]] = []
 
     entry_id = 0
     for json_name, rec in data.items():
@@ -270,13 +280,13 @@ def dict_to_dataframes(data: Dict[str, Dict[str, Any]]) -> tuple[pd.DataFrame, p
 
         # ensure sorted by start, then add an ordinal for stable sequencing
         segments_sorted = sorted(segments, key=lambda t: t[2])
-        for k, (label, gloss, start, end) in enumerate(segments_sorted):
-            seg_rows.append((entry_id, label, gloss, float(start), float(end), k))
+        for k, (label, gloss, start, end, row, end_col) in enumerate(segments_sorted):
+            seg_rows.append((entry_id, label, gloss, float(start), float(end), row, end_col, k))
 
         entry_id += 1
 
     meta_df = pd.DataFrame(meta_rows, columns=["entry_id", "sentence", "json"])
-    segments_df = pd.DataFrame(seg_rows, columns=["entry_id", "label", "gloss", "start", "end", "ord"])
+    segments_df = pd.DataFrame(seg_rows, columns=["entry_id", "label", "gloss", "start", "end", "row", "column", "ord"])
 
     # dtypes (memory-friendly)
     meta_df["entry_id"] = meta_df["entry_id"].astype("int32")
@@ -316,7 +326,7 @@ def folder_df(folder: Path):
 
 
 _TRAILING_DIGITS_RE = re.compile(r"\d+$")
-_TRAILING_HASHES_RE = re.compile(r"#+$")
+_TRAILING_HASHES_RE = re.compile(r"[#'@]+$")
 
 def normalise_gloss_token(token: str) -> str:
     token = str(token).strip()
@@ -343,9 +353,9 @@ def sent_gloss(
         sep: str = " ",
         dropna_gloss: bool = True,
         keep_no_segments: bool = False,
-) -> Dict[int, Tuple[str, Union[List[str], str], str]]:
+) -> Dict[int, Tuple[str, Union[List[str], str], str, str]]:
     """
-    Build: {entry_id: (sentence, gloss_seq, src)}
+    Build: {entry_id: (sentence, gloss_seq, json, src)}
 
     - sentence comes from meta_df
     - gloss_seq comes from segments_df rows matching entry_id, sorted by ord
@@ -355,8 +365,8 @@ def sent_gloss(
       meta_df:     entry_id, sentence, json
       segments_df: entry_id, label, gloss, start, end, ord
     """
-    required_meta = {"entry_id", "sentence"}
-    required_seg = {"entry_id", "gloss", "ord"}
+    required_meta = {"entry_id", "sentence", "json"}
+    required_seg = {"entry_id", "gloss", "ord", "start", "end"}
 
     missing_meta = required_meta - set(meta_df.columns)
     missing_seg = required_seg - set(segments_df.columns)
@@ -365,8 +375,8 @@ def sent_gloss(
     if missing_seg:
         raise ValueError(f"segments_df missing required columns: {sorted(missing_seg)}")
 
-    m = meta_df[["entry_id", "sentence", "source_folder"]].copy()
-    s = segments_df[["entry_id", "gloss", "ord"]].copy()
+    m = meta_df[["entry_id", "sentence", "json", "source_folder"]].copy()
+    s = segments_df[["entry_id", "gloss", "ord", "start", "end"]].copy()
 
     # Normalise types
     m["entry_id"] = m["entry_id"].astype(int)
@@ -383,16 +393,41 @@ def sent_gloss(
 
     # Sort by intended order and aggregate tokens per entry_id
     s = s.sort_values(["entry_id", "ord"], kind="mergesort")
-    gloss_by_id = s.groupby("entry_id")["gloss"].apply(list)
 
-    out: Dict[int, Tuple[str, Union[List[str], str],str]] = {}
+    def _overlaps(a_start, a_end, b_start, b_end) -> bool:
+        if pd.isna(a_start) or pd.isna(a_end) or pd.isna(b_start) or pd.isna(b_end):
+            return False
+        return max(a_start, b_start) <= min(a_end, b_end)
 
-    for entry_id, sentence, src in zip(m["entry_id"], m["sentence"], m["source_folder"]):
+    def _merge_gloss_runs(group: pd.DataFrame) -> List[str]:
+        tokens: List[str] = []
+        prev_gloss = None
+        prev_start = None
+        prev_end = None
+
+        for gloss, start, end in zip(group["gloss"], group["start"], group["end"]):
+            if prev_gloss is not None and gloss == prev_gloss and _overlaps(prev_start, prev_end, start, end):
+                if not pd.isna(end) and (pd.isna(prev_end) or end > prev_end):
+                    prev_end = end
+                continue
+
+            tokens.append(gloss)
+            prev_gloss = gloss
+            prev_start = start
+            prev_end = end
+
+        return tokens
+
+    gloss_by_id = s.groupby("entry_id", sort=False).apply(_merge_gloss_runs)
+
+    out: Dict[int, Tuple[str, Union[List[str], str],str, str]] = {}
+
+    for entry_id, sentence, json_name ,src in zip(m["entry_id"], m["sentence"],m["json"], m["source_folder"]):
         tokens = gloss_by_id.get(entry_id, [])
         if (not keep_no_segments) and (len(tokens) == 0):
             continue
         gloss_seq: Union[List[str], str] = tokens if gloss_as_list else sep.join(tokens)
-        out[int(entry_id)] = (sentence, gloss_seq, str(src))
+        out[int(entry_id)] = (sentence, gloss_seq, json_name, str(src))
 
     return out
 
@@ -468,16 +503,17 @@ def merge_folder_outputs(root: Path, *, verbose: bool = True):
     return meta_all, seg_all, drops_all
 
 def save_jsonl(
-    data: dict[int, tuple[str, str, str]],
+    data: dict[int, tuple[str, str, str, str]],
     out_path: Path,
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
-        for entry_id, (sentence, gloss_seq, source_folder) in data.items():
+        for entry_id, (sentence, gloss_seq, json_name ,source_folder) in data.items():
             obj = {
                 "entry_id": entry_id,
                 "sentence": sentence,
                 "gloss": gloss_seq,
+                "json": json_name,
                 "source_folder": source_folder
             }
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
@@ -493,7 +529,7 @@ if __name__ == "__main__":
 
     # Save
     base = Path(__file__).resolve().parent
-    out_path = base / "ksl_sentence_gloss.jsonl"
+    out_path = base / "training_sentence_gloss.jsonl"
     serialisable = {str(k): [v[0], v[1]] for k, v in merged_dict.items()}
 
     save_jsonl(merged_dict, out_path)

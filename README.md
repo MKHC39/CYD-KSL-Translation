@@ -20,4 +20,4 @@
 | Gemini 3 Flash | 0.928626  | 0.878687 |
 | Gemini 3 Pro   | 0.930102  | 0.883101 |
 
-**Dataset:** `glossTL/data.csv`
+**Dataset:** [glossTL/data.csv](glossTL/data.csv)

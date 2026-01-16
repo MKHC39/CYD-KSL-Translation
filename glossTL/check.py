@@ -346,3 +346,7 @@ def sample_error_windows(
         })
 
     return samples
+
+def lookup(path: Path,row: int, row2: int, col: int, col2: int):
+    df = pd.read_excel(path, header=None, engine="openpyxl")
+    return df.iloc[row:row2 , col:col2]
