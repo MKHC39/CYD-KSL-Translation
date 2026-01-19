@@ -1,10 +1,13 @@
 ## Data Preparation
 
-1. from /preprocessing/ run KSL_dataset_cache.py (-h for args). (Currently only compatible with AIHUB NIASL2021)
-2. Copy /preprocess/ directory into root
+1. from /preprocessing/ run KSL_dataset_cache.py (-h for args). (Currently compatible with AIHUB NIASL2021 and NIASLG1)
+2. Copy /preprocess/ directory into project root.
+
+## Training Model
+Change /configs/KSL.yaml task value to "islr" for ISLR dataset, anything else for CLSR.
 
 
-## 100 Word Trained Model
+## 100 Word ISLR Trained Model
 
 | Backbone | Dev Top-1 Acc  | Pretrained model                                             |
 | -------- | ---------- | ----------- |

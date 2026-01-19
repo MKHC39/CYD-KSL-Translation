@@ -7,6 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/cache" />
       <excludeFolder url="file://$MODULE_DIR$/notebook" />
       <excludeFolder url="file://$MODULE_DIR$/preprocess" />
+      <excludeFolder url="file://$MODULE_DIR$/preprocessing/cache" />
     </content>
     <orderEntry type="jdk" jdkName="/home/harrison/miniconda3/envs/ksl_slt WSL (Ubuntu): (null)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

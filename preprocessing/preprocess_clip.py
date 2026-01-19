@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Tuple, Any, Optional, Literal
+from typing import Dict, List, Tuple, Any, Optional
 
 import cv2
 import numpy as np
@@ -7,7 +7,6 @@ import torch
 
 from preprocessing.frame_extract import pull_video_items
 from preprocessing.border import crop_valid, crop_bounds
-from preprocessing.KSL_dataset_cache import find_dir
 import re
 
 from pathlib import Path
@@ -67,6 +66,20 @@ def load_morpheme(morpheme_path: Path) -> Tuple[float, float, str]:
     return start_s, end_s, label
 
 
+def _video_end_s(video_path: Path) -> float:
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        raise FileNotFoundError(f"Could not open video: {video_path}")
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    cap.release()
+    if fps <= 0:
+        raise ValueError(f"Invalid FPS reported: {fps}")
+    if frame_count <= 0:
+        return 0.0
+    return max(0.0, (frame_count - 1.0) / fps)
+
+
 def frame_to_tensor(
         frame_bgr: np.ndarray,
         x1: int,
@@ -124,19 +137,20 @@ def NIASL2021_roots(data_root: Path, stem: str) -> Tuple[Path, Path, Path]:
     return video_path, morpheme_path, keypoint_dir
 
 
-def NIASLG1_roots(data_root: Path) -> Tuple[Path, Path]:
-    training_root = find_dir(data_root, "1.Training")
-    val_root = find_dir(data_root, "2.Validation")
-
-    return training_root, val_root
-
 def preprocess_stem(
         stem: str,
         data_root: Path,
         step: int = 1,
         margin_px: int = 40,
         normalise_imagenet: bool = False,
-        dataset: str = "NIASL2021"
+        dataset: str = "NIASL2021",
+        *,
+        video_path: Optional[Path] = None,
+        keypoint_dir: Optional[Path] = None,
+        start_s: Optional[float] = None,
+        end_s: Optional[float] = None,
+        label_override: Optional[str] = None,
+        skip_keypoints: bool = False,
     ) -> Tuple[torch.Tensor, List[int], Dict[str, Any]]:
     """
     Input:
@@ -148,15 +162,23 @@ def preprocess_stem(
       meta: label + skip stats
     """
 
+    missing_kp = 0
+    discarded_bounds = 0
+
     if dataset == "NIASL2021":
         video_path, morpheme_path, keypoint_dir = NIASL2021_roots(data_root=data_root, stem=stem)
-
         start_s, end_s, label = load_morpheme(morpheme_path)
-        missing_kp = 0
-        discarded_bounds = 0
     elif dataset == "NIASLG1":
-        training_root, val_root = NIASLG1_roots(data_root=data_root)
-        mp4_paths = list(training_root.rglob("*.mp4"))
+        if video_path is None:
+            raise ValueError("video_path is required for NIASLG1")
+        if not video_path.exists():
+            raise FileNotFoundError(f"Missing video: {video_path}")
+        if start_s is None:
+            start_s = 0.0
+        if end_s is None:
+            end_s = _video_end_s(video_path)
+        label = label_override if label_override is not None else ""
+        skip_keypoints = True
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
 
@@ -173,15 +195,15 @@ def preprocess_stem(
                 # reject this video early; you can also "return None" but that hides the error
                 raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
 
-        if dataset == "NIASL2021":
+        if skip_keypoints:
+            ok, direction, error = True, "ok", 0
+        else:
             kp_path = keypoint_dir / f"{stem}_{frame_idx:012d}_keypoints.json"
             if not kp_path.exists():
                 missing_kp += 1
                 return None
 
             ok, direction, error = crop_valid(kp_path, img_w, img_h, margin_px=margin_px)
-        else:
-            ok, direction, error = True, Literal["ok"], 0
 
         bounds = crop_bounds(ok, direction, error, img_w=img_w, img_h=img_h, margin_px=margin_px)
 
