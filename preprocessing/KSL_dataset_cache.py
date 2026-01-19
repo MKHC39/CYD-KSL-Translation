@@ -37,8 +37,8 @@ def parse_stem(stem: str) -> tuple[int, int, str]:
 @dataclass(frozen=True)
 class CacheItem:
     stem: str
-    w: int
-    p: int
+    w: int | None
+    p: int | None
     angle: str
 
 
@@ -105,17 +105,35 @@ def _write_info_npy(path: Path, info_rows: List[dict]) -> None:
     np.save(path, info_dict)
 
 
+def find_dir(root: Path, target_name: str) -> Path:
+    root = root.expanduser().resolve()
+
+    # Fast path: common layout where it's directly under root
+    direct = root / target_name
+    if direct.is_dir():
+        return direct
+
+    # Otherwise: search recursively for a directory named target_name
+    matches = [p for p in root.rglob(target_name) if p.is_dir()]
+
+    if not matches:
+        raise FileNotFoundError(f"Couldn't find a '{target_name}' directory under: {root}")
+
+    # If there are multiple, pick the shortest path (closest to root)
+    matches.sort(key=lambda p: len(p.parts))
+    return matches[0]
+
+
 def build_cache_multi_split(
     *,
     cache_root: Path,
     out_dir: Path,
+    dataset: str = "NIASL2021",
     splits: Mapping[str, Sequence[int]],          # e.g. {"train": range(1,17), "dev": (17,18)}
-    w_start: int,
-    w_end: int,
     angles: Sequence[str] = DEFAULT_ANGLES,
     step: int = 1,
     margin_px: int = 40,
-    overwrite: bool = False,
+    overwrite: bool = True,
     vocab_source: str = "train",                  # "train" (recommended) or "all"
     strict_dev_labels: bool = True,               # if True, dev/test unseen labels -> error
     data_root: Path,
@@ -135,6 +153,11 @@ def build_cache_multi_split(
       - keyed ONLY by label_str (meta["label"])
       - 0 reserved for blank (CTC); label IDs start at 1
     """
+    if dataset == "NIASL2021":
+        w_start = int(input("w_start = ?"))
+        w_end = int(input("w_end = ?"))
+
+
     cache_root.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -177,7 +200,21 @@ def build_cache_multi_split(
         if split_name != "train" and strict_dev_labels:
             allow_new_labels = False
 
-        for item in iter_stems(w_start, w_end, signers, angles):
+        if dataset == "NIASL2021":
+            stems = iter_stems(w_start, w_end, signers, angles)
+        elif dataset == "NIASLG1":
+            training_root = find_dir(data_root, "1.Training")
+            val_root = find_dir(data_root, "2.Validation")
+            mp4_paths = list(training_root.rglob("*.mp4"))
+            for p in mp4_paths:
+                filename = p.stem  # filename without ".mp4"
+                splitname = filename.rsplit("_", 1)
+                a = splitname[1]
+                stems = CacheItem(stem=filename, w=None, p=None, angle=a)
+        else:
+            raise ValueError(f"Unknown dataset: {dataset}")
+
+        for item in stems:
             out_path = cache_root / f"{item.stem}.npy"
             if out_path.exists() and not overwrite:
                 stats[split_name]["skipped"] += 1
@@ -276,22 +313,28 @@ def build_cache_multi_split(
 def p(s: str) -> Path:
     return Path(s).expanduser()
 
-
 def argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--cache_root",
         type = p,
-        required = True,
+        default = Path(__file__).parent.resolve() / "cache",
         help = "Path to the cache root directory",
+    )
+
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        required=True,
+        help="Name of the dataset: (NIASL2021, NIASLG1)",
     )
 
     parser.add_argument(
         "--data_root",
         type = p,
-        default= Path("/mnt/d/수어 영상/수어 영상"),
-        help = "Base directory for dataset",
+        default= Path("/home/harrison/Workplace/workspaces/수어 재난 데이터"),
+        help = r"Base directory for dataset; .../수어 영상 for NIASL2021",
     )
 
     return parser
@@ -303,6 +346,7 @@ if __name__ == "__main__":
     DATA_ROOT = args.data_root
     CACHE_ROOT = args.cache_root
     OUT_DIR    = args.cache_root / "preprocess" / "KSL"
+    DATASET    = args.dataset
 
     SPLITS = {
         "train": list(range(1, 17)),  # signers 1..16
@@ -310,8 +354,6 @@ if __name__ == "__main__":
         # "test": (...)               # if you add later
     }
 
-    W_START = int(input("w_start = ?"))
-    W_END   = int(input("w_end = ?"))
     ANGLES  = DEFAULT_ANGLES
 
     STEP = 1
@@ -327,8 +369,7 @@ if __name__ == "__main__":
         cache_root=CACHE_ROOT,
         out_dir=OUT_DIR,
         splits=SPLITS,
-        w_start=W_START,
-        w_end=W_END,
+        dataset=DATASET,
         angles=ANGLES,
         step=STEP,
         margin_px=MARGIN_PX,

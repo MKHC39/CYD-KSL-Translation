@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Literal
 
 import cv2
 import numpy as np
@@ -7,6 +7,7 @@ import torch
 
 from preprocessing.frame_extract import pull_video_items
 from preprocessing.border import crop_valid, crop_bounds
+from preprocessing.KSL_dataset_cache import find_dir
 import re
 
 from pathlib import Path
@@ -103,24 +104,7 @@ def frame_to_tensor(
     chw = np.transpose(crop_rgb, (2, 0, 1))
     return torch.from_numpy(chw)  # (3,224,224) float32
 
-
-def preprocess_stem(
-        stem: str,
-        data_root: Path,
-        step: int = 1,
-        margin_px: int = 40,
-        normalise_imagenet: bool = False,
-    ) -> Tuple[torch.Tensor, List[int], Dict[str, Any]]:
-    """
-    End-to-end for a single stem:
-      stem: "NIA_SL_WORD1501_REAL01_D"
-
-    Returns:
-      clip: (T,3,224,224) float32
-      kept_indices: original frame indices kept
-      meta: label + skip stats
-    """
-
+def NIASL2021_roots(data_root: Path, stem: str) -> Tuple[Path, Path, Path]:
     _, p, _ = parse_stem(stem)
     train_root = data_root / "1.Training"
     val_root = data_root / "2.Validation"
@@ -134,20 +118,54 @@ def preprocess_stem(
         raise FileNotFoundError(f"Missing video: {video_path}")
     if not morpheme_path.exists():
         raise FileNotFoundError(f"Missing morpheme: {morpheme_path}")
-    """
     if not keypoint_dir.exists():
         raise FileNotFoundError(f"Missing keypoint folder: {keypoint_dir}")
+
+    return video_path, morpheme_path, keypoint_dir
+
+
+def NIASLG1_roots(data_root: Path) -> Tuple[Path, Path]:
+    training_root = find_dir(data_root, "1.Training")
+    val_root = find_dir(data_root, "2.Validation")
+
+    return training_root, val_root
+
+def preprocess_stem(
+        stem: str,
+        data_root: Path,
+        step: int = 1,
+        margin_px: int = 40,
+        normalise_imagenet: bool = False,
+        dataset: str = "NIASL2021"
+    ) -> Tuple[torch.Tensor, List[int], Dict[str, Any]]:
+    """
+    Input:
+      dataset: "NIASL2021" or "NIASLG1"
+
+    Returns:
+      clip: (T,3,224,224) float32
+      kept_indices: original frame indices kept
+      meta: label + skip stats
     """
 
-    start_s, end_s, label = load_morpheme(morpheme_path)
-    missing_kp = 0
-    discarded_bounds = 0
+    if dataset == "NIASL2021":
+        video_path, morpheme_path, keypoint_dir = NIASL2021_roots(data_root=data_root, stem=stem)
+
+        start_s, end_s, label = load_morpheme(morpheme_path)
+        missing_kp = 0
+        discarded_bounds = 0
+    elif dataset == "NIASLG1":
+        training_root, val_root = NIASLG1_roots(data_root=data_root)
+        mp4_paths = list(training_root.rglob("*.mp4"))
+    else:
+        raise ValueError(f"Unknown dataset: {dataset}")
+
 
     img_w = None
     img_h = None
 
     def transform(frame_bgr: np.ndarray, frame_idx: int) -> Optional[torch.Tensor]:
-        nonlocal missing_kp, discarded_bounds, img_w, img_h
+        nonlocal missing_kp, discarded_bounds, img_w, img_h, dataset
 
         if img_h is None or img_w is None:
             img_h, img_w = frame_bgr.shape[:2]
@@ -155,13 +173,18 @@ def preprocess_stem(
                 # reject this video early; you can also "return None" but that hides the error
                 raise ValueError(f"Expected img_w >= img_h for horizontal square crop, got {img_w}x{img_h}")
 
-        kp_path = keypoint_dir / f"{stem}_{frame_idx:012d}_keypoints.json"
-        if not kp_path.exists():
-            missing_kp += 1
-            return None
+        if dataset == "NIASL2021":
+            kp_path = keypoint_dir / f"{stem}_{frame_idx:012d}_keypoints.json"
+            if not kp_path.exists():
+                missing_kp += 1
+                return None
 
-        ok, direction, error = crop_valid(kp_path, img_w, img_h, margin_px=margin_px)
+            ok, direction, error = crop_valid(kp_path, img_w, img_h, margin_px=margin_px)
+        else:
+            ok, direction, error = True, Literal["ok"], 0
+
         bounds = crop_bounds(ok, direction, error, img_w=img_w, img_h=img_h, margin_px=margin_px)
+
         if bounds is None:
             discarded_bounds += 1
             return None
