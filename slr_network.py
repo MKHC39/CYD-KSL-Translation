@@ -34,9 +34,12 @@ class SLRModel(nn.Module):
     def __init__(
             self, num_classes, c2d_type, conv_type, use_bn=False,
             hidden_size=1024, gloss_dict=None, loss_weights=None,
-            weight_norm=True, share_classifier=True
+            weight_norm=True, share_classifier=True,
+            enable_decode: bool = True,
+            decode_mode: str = "beam",
     ):
         super(SLRModel, self).__init__()
+        self.decoder = None
         self.loss = dict()
         self.criterion_init()
         self.num_classes = num_classes
@@ -50,6 +53,8 @@ class SLRModel(nn.Module):
                                    conv_type=conv_type,
                                    use_bn=use_bn,
                                    num_classes=num_classes)
+        if enable_decode and gloss_dict is not None:
+            self.decoder = utils.Decode(gloss_dict, num_classes, decode_mode)
         self.temporal_model = BiLSTMLayer(rnn_type='LSTM', input_size=hidden_size, hidden_size=hidden_size,
                                           num_layers=2, bidirectional=True)
         if weight_norm:
@@ -115,6 +120,12 @@ class SLRModel(nn.Module):
 
         clip_logits = self.masked_mean_pool_time_major(outputs, lgt)  # (B,num_classes)
 
+        pred = None
+        conv_pred = None
+        if self.decoder is not None and not self.training:
+            pred = self.decoder.decode(outputs, lgt, batch_first=False, probs=False)
+            conv_pred = self.decoder.decode(conv1d_outputs['conv_logits'], lgt, batch_first=False, probs=False)
+
         return {
             #"framewise_features": framewise,
             #"visual_features": x,
@@ -122,6 +133,8 @@ class SLRModel(nn.Module):
             "conv_logits": conv1d_outputs['conv_logits'],
             "sequence_logits": outputs,
             "clip_logits": clip_logits,
+            "conv_sents": conv_pred,
+            "recognized_sents": pred,
             "loss_LiftPool_u": conv1d_outputs['loss_LiftPool_u'],
             "loss_LiftPool_p": conv1d_outputs['loss_LiftPool_p'],
         }

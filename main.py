@@ -172,8 +172,14 @@ class Processor():
         self.device.set_device(self.arg.device)
         print("Loading model")
         model_class = import_class(self.arg.model)
+        model_args = dict(self.arg.model_args)
+        task = str(self.arg.dataset_info.get("task", "")).lower()
+        if "enable_decode" not in model_args:
+            model_args["enable_decode"] = (task != "islr")
+        if "decode_mode" not in model_args and hasattr(self.arg, "decode_mode"):
+            model_args["decode_mode"] = self.arg.decode_mode
         model = model_class(
-            **self.arg.model_args,
+            **model_args,
             gloss_dict=self.gloss_dict,
             loss_weights=self.arg.loss_weights,
         )
