@@ -8,7 +8,7 @@ import torch.nn as nn
 from tqdm import tqdm
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-# from evaluation.slr_eval.wer_calculation import evaluate
+from evaluation.slr_eval.wer_calculation import evaluate
 from torch.cuda.amp import autocast as autocast
 from torch.cuda.amp import GradScaler
 import gc

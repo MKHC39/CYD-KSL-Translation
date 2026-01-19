@@ -41,6 +41,11 @@ feeder_args:
   image_scale: 1.0  # 0-1 represents ratio, >1 represents absolute value
   input_size: 224
 
+  # KSL_args
+  cache_root: ./preprocessing/cache
+  w_start: 1
+  w_end: 100
+
 model: slr_network.SLRModel
 decode_mode: beam
 model_args:

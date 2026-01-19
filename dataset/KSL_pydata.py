@@ -105,11 +105,11 @@ class KSLFeeder(Dataset):
             input_size: int = 224,
 
             # Your controls (via feeder_args)
-            cache_root = Path("/mnt/c/Workplace/workspaces/ksl/cache/cached_npz_full"),
+            cache_root = Path("./preprocessing/cache"),
             use_cache: bool = True,
-            w_start: int = 1,
-            w_end: int = 30,
             angles: Sequence[str] = DEFAULT_ANGLES,
+            w_start: int = 1,
+            w_end: int = 100,
 
             # NEW: signer split (train=1..16, dev/test=17..18 by default)
             signers: Optional[Sequence[int]] = None,
@@ -128,7 +128,7 @@ class KSLFeeder(Dataset):
         self.mode = str(mode)
 
 
-        self.transform_mode = "train" if transform_mode else "train"
+        self.transform_mode = "train" if transform_mode else "test"
 
         # CorrNet-style aug params (match BaseFeeder defaults)
         self.frame_interval = int(frame_interval)
@@ -137,10 +137,7 @@ class KSLFeeder(Dataset):
         mode_l = str(mode).lower()
         info_mode = "dev" if mode_l in ("test", "val", "valid", "validation") else mode_l
 
-        info_dict = np.load(
-            f"/mnt/c/Workplace/workspaces/ksl/preprocess/{dataset}/{info_mode}_info.npy",
-            allow_pickle=True
-        ).item()
+        info_dict = np.load(f"./preprocess/{dataset}/{info_mode}_info.npy", allow_pickle=True).item()
 
         items = [info_dict[k] for k in sorted(info_dict.keys())]
 
@@ -150,7 +147,7 @@ class KSLFeeder(Dataset):
 
         # Load gloss_dict if not provided
         DEFAULT_GLOSS_DICT_PATH = Path(
-            "/mnt/c/Workplace/workspaces/ksl/cache/preprocess\KSL\gloss_dict.npy"
+            "./preprocess/KSL/gloss_dict.npy"
         )
         if gloss_dict is None or len(gloss_dict) == 0:
             gloss_dict = np.load(DEFAULT_GLOSS_DICT_PATH, allow_pickle=True).item()
@@ -228,9 +225,18 @@ class KSLFeeder(Dataset):
         cache_path = Path(fi["npz"])
         with np.load(cache_path, allow_pickle=False) as pack:
             video = pack["video"]
+            label_ids = pack["label_ids"] if "label_ids" in pack else None
             label_id = int(pack["label_id"])
 
-        label_list = [label_id]
+        if label_ids is not None:
+            label_list = [int(x) for x in label_ids.tolist() if int(x) > 0]
+        elif "label" in fi and isinstance(fi["label"], str):
+            label_list = []
+            for tok in fi["label"].split():
+                if tok in self.gloss_dict:
+                    label_list.append(int(self.gloss_dict[tok][0]))
+        else:
+            label_list = [label_id] if label_id > 0 else []
         video, label_list = self.normalize(video, label_list, file_id=stem)
         label = torch.LongTensor(label_list)
 
@@ -320,4 +326,3 @@ if __name__ == "__main__":
     dataset = MiniFeeder()
     for i in range(len(dataset)):
         print(dataset.__getitem__(i)[2])
-
