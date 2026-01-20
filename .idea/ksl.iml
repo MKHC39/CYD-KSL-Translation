@@ -9,6 +9,8 @@
       <excludeFolder url="file://$MODULE_DIR$/preprocess" />
       <excludeFolder url="file://$MODULE_DIR$/preprocessing/cache" />
       <excludeFolder url="file://$MODULE_DIR$/work_dir" />
+      <excludeFolder url="file://$MODULE_DIR$/changelogs" />
+      <excludeFolder url="file://$MODULE_DIR$/changelogs/git-day-logs" />
     </content>
     <orderEntry type="jdk" jdkName="/home/harrison/miniconda3/envs/ksl_slt WSL (Ubuntu): (null)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

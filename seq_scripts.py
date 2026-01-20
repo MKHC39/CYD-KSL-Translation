@@ -15,6 +15,8 @@ import gc
 
 
 def _tqdm(iterable, **kwargs):
+    conv_ret = None
+    lstm_ret = 100.0
     try:
         from tqdm.auto import tqdm
         return tqdm(iterable, **kwargs)
@@ -232,7 +234,6 @@ def seq_eval(cfg, loader, model, device, mode, epoch, work_dir, recoder,
         write2file(work_dir + "output-hypothesis-{}.ctm".format(mode), total_info, total_sent)
         write2file(work_dir + "output-hypothesis-{}-conv.ctm".format(mode), total_info,
                    total_conv_sent)
-        """
         conv_ret = evaluate(
             prefix=work_dir, mode=mode, output_file="output-hypothesis-{}-conv.ctm".format(mode),
             evaluate_dir=cfg.dataset_info['evaluation_dir'],
@@ -248,13 +249,13 @@ def seq_eval(cfg, loader, model, device, mode, epoch, work_dir, recoder,
             python_evaluate=python_eval,
             triplet=True,
         )
-        """
-    except:
+    except Exception:
         print("Unexpected error:", sys.exc_info()[0])
         lstm_ret = 100.0
     finally:
         pass
-    # del conv_ret
+    if conv_ret is not None:
+        del conv_ret
     del total_sent
     del total_info
     del total_conv_sent
