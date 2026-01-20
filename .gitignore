@@ -28,3 +28,6 @@ work_dir/
 
 # Jupyter
 notebook/
+
+# Changelogs
+changelogs/
