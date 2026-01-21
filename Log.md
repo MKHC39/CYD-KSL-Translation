@@ -716,4 +716,5 @@ Potential next steps include:
 - investigation of transformer-based sequence modelling
 - integration of gloss-level CSLR outputs with downstream translation models
 - exploration of end-to-end sign language translation with pretrained encoders
+- Training with larger scale datasets and larger models for accuracy
 
