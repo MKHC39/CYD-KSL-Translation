@@ -90,12 +90,13 @@ def seq_train(loader, model, optimizer, device, epoch_idx, recoder, cfg=None):
         del ret_dict
         del loss
     optimizer.scheduler.step()
-    recoder.print_log('\tMean training loss: {:.10f}.'.format(np.mean(loss_value)))
+    mean_loss = np.mean(loss_value) if loss_value else float("nan")
+    recoder.print_log('\tMean training loss: {:.10f}.'.format(mean_loss))
     del loss_value
     del clr
     gc.collect()
     torch.cuda.empty_cache()
-    return 
+    return mean_loss
 
 
 def islr_train(cfg, loader, model, optimizer, device, epoch_idx, recoder):
@@ -152,10 +153,12 @@ def islr_train(cfg, loader, model, optimizer, device, epoch_idx, recoder):
         del ret_dict, loss
 
     optimizer.scheduler.step()
-    recoder.print_log('\t[ISLR] Mean training loss: {:.10f}.'.format(np.mean(loss_value) if loss_value else float("nan")))
+    mean_loss = np.mean(loss_value) if loss_value else float("nan")
+    recoder.print_log('\t[ISLR] Mean training loss: {:.10f}.'.format(mean_loss))
     del loss_value, clr
     gc.collect()
     torch.cuda.empty_cache()
+    return mean_loss
 
 
 def islr_eval(cfg, loader, model, device, mode, epoch, work_dir, recoder):

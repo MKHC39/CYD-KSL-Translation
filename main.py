@@ -57,6 +57,14 @@ class Processor():
             best_epoch = 0
             total_time = 0
             epoch_time = 0
+            loss_history = []
+            wer_history = []
+            plateau_count = 0
+            plateau_saved = False
+            plateau_window = 5
+            plateau_patience = 3
+            min_delta_wer = 1.0
+            min_delta_loss = None
             self.recoder.print_log('Parameters:\n{}\n'.format(str(vars(self.arg))))
             seq_model_list = []
             for epoch in range(self.arg.optimizer_args['start_epoch'], self.arg.num_epoch):
@@ -64,12 +72,28 @@ class Processor():
                 eval_model = epoch % self.arg.eval_interval == 0
                 epoch_time = time.time()
                 # train end2end model
-                seq_train(self.data_loader['train'], self.model, self.optimizer,
-                          self.device, epoch, self.recoder, cfg=self.arg)
+                train_loss = seq_train(
+                    self.data_loader['train'],
+                    self.model,
+                    self.optimizer,
+                    self.device,
+                    epoch,
+                    self.recoder,
+                    cfg=self.arg,
+                )
                 if eval_model:
                     dev_wer = seq_eval(self.arg, self.data_loader['dev'], self.model, self.device,
                                        'dev', epoch, self.arg.work_dir, self.recoder, self.arg.evaluate_tool)
                     self.recoder.print_log("Dev WER: {:05.2f}%".format(dev_wer))
+                else:
+                    dev_wer = None
+
+                loss_history.append(train_loss)
+                if dev_wer is not None:
+                    wer_history.append(dev_wer)
+
+                if min_delta_loss is None and train_loss == train_loss:
+                    min_delta_loss = train_loss / 100.0
                 if dev_wer < best_dev:
                     best_dev = dev_wer
                     best_epoch = epoch
@@ -82,6 +106,27 @@ class Processor():
                     seq_model_list.append(model_path)
                     print("seq_model_list", seq_model_list)
                     self.save_model(epoch, model_path)
+
+                # Plateau checkpoint: both dev WER and train loss flat
+                if dev_wer is not None and len(loss_history) >= plateau_window and len(wer_history) >= plateau_window:
+                    recent_loss = loss_history[-plateau_window:]
+                    recent_wer = wer_history[-plateau_window:]
+
+                    loss_range = max(recent_loss) - min(recent_loss)
+                    wer_range = max(recent_wer) - min(recent_wer)
+
+                    if min_delta_loss is None:
+                        min_delta_loss = 0.0
+
+                    if loss_range <= min_delta_loss and wer_range <= min_delta_wer:
+                        plateau_count += 1
+                        if plateau_count == 1 and not plateau_saved:
+                            plateau_path = "{}plateau_epoch{}_model.pt".format(self.arg.work_dir, epoch)
+                            self.save_model(epoch, plateau_path)
+                            self.recoder.print_log(f"Saved plateau model at epoch {epoch}: {plateau_path}")
+                            plateau_saved = True
+                    else:
+                        plateau_count = 0
                 epoch_time = time.time() - epoch_time
                 total_time += epoch_time
                 torch.cuda.empty_cache()

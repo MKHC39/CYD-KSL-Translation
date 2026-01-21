@@ -25,6 +25,8 @@
 
 - [Week 1 (15–19 December 2025)](#week1)
 - [Weeks 2–3 (22–30 December 2025)](#week23)
+- [Week 4 (5-9 January 2026)](#week4)
+- [Week 5 (13–16 January 2026)](#week5)
 
 <a id="week1"></a>
 ### Week 1 (15–19 December 2025)
@@ -208,7 +210,7 @@ By the end of Weeks 2–3:
   - placeholder handling for missing or empty arguments
   - STM generation to satisfy sequence-evaluation requirements
 - A separate ISLR evaluation function was implemented to isolate evaluation behaviour from CorrNet’s internal pipeline.
-- The custom evaluation function was able to run end-to-end on a small-scale test dataset.
+- The custom evaluation function was able to run end-to-end on a small-scale test dataset (10 word classes, 5 angles, 1 signer for 50 samples)..
 
 At this stage, the exact cause of evaluation inconsistencies was not yet understood.
 
@@ -228,4 +230,261 @@ Although evaluation results were inconsistent, the underlying cause had not yet 
 The focus in this phase was to establish a fully runnable system end-to-end baseline. While that goal had been achieved, it was clear that further work was required to diagnose and resolve evaluation-stage behaviour — which became the focus of the following week.
 
 ---
+
+<a id="week4"></a>
+### Week 4 (5–9 January 2026)
+
+#### Focus  
+Repository restructuring, large-scale validation of the ISLR pipeline, diagnosis of evaluation failures, and transition planning toward sequence-level translation.
+
+Following the initial implementation phase in Weeks 2–3, Week 4 focused on consolidating the codebase into a full CorrNet-style structure, validating the system at scale, and reassessing architectural direction based on empirical results.
+
+---
+
+#### Summary of work
+
+**Repository restructuring and scale-up (5 Jan)**  
+- Restructured the project into a full CorrNet-style codebase with KSL-specific patches applied directly into the framework.
+- Transitioned from patch-based injection toward treating KSL as a first-class dataset within the repository.
+- Expanded experimental scale significantly:
+  - from small sanity runs (10 word classes, ~50 samples, no dev set)
+  - to a medium-scale dataset (20 word classes, 5 angles, 16 training signers + 2 dev signers, ~1,800 samples)
+- This scale-up exposed evaluation behaviour that was not observable under smaller experimental conditions.
+
+**Evaluation failure diagnosis (6 Jan)**  
+- Conducted focused debugging on NaN and evaluation crashes observed during large-scale runs.
+- Identified the root cause as CTC decoder collapse for sequences of temporal length 1:
+  - logits collapsed into empty sequences
+  - infinite losses were produced but not always surfaced
+  - blank entries propagated into evaluation, causing index mismatches
+- Determined that the issue affected both evaluation and training, invalidating the CTC-based ISLR formulation under current dataset constraints.
+
+**Architectural reassessment and pivot (6 Jan)**  
+- Reviewed state-of-the-art modelling approaches across:
+  - ISLR
+  - CSLR
+  - end-to-end SLT
+- Identified a consistent encoder–decoder pattern across tasks.
+- Concluded that CorrNet’s encoder (2D CNN + 1D temporal convolution + BiLSTM) remained reusable and valuable.
+- Decided to decouple decoding from the encoder:
+  - retain the encoder
+  - replace CTC-based decoding with task-specific heads
+- Defined a revised ISLR formulation using cross-entropy loss rather than CTC.
+
+**ISLR pipeline refactor (7 Jan)**  
+- Introduced an explicit `mode=islr` execution path within the training and evaluation scripts.
+- Refactored `seq_train` and `seq_eval` to support task-specific logic.
+- Removed or bypassed CTC-dependent code paths.
+- Modified module interfaces to return logits directly for simplified downstream handling.
+- Initiated overnight training on the revised ISLR formulation.
+
+**ISLR validation and project direction alignment (8 Jan)**  
+- Successfully trained the 20-word ISLR dataset, achieving **98.5% top-1 accuracy**.
+- Confirmed stability and correctness of the revised encoder + cross-entropy formulation.
+- Consulted with the project manager to review progress and define next-stage direction.
+- Agreed to shift focus toward sequence-level modelling as the final project goal.
+- Defined a decision framework:
+  - evaluate feasibility of gloss-sequence translation using LLMs
+  - if insufficient, pursue end-to-end Transformer-based SLT
+- Began preparing for sequence-level experimentation by:
+  - downloading the NIASLG1 dataset
+  - reintegrating early research material (`CYDProject`) into the main repository
+  - launching larger ISLR runs (100-word dataset, ~9,000 samples) in parallel.
+
+**Translation-layer preprocessing groundwork (9 Jan)**  
+- Initiated development of translation-focused preprocessing tools under `glossTL/`.
+- Implemented scripts to parse XLSX files containing gloss–sentence pairs.
+- Added validation tooling to detect malformed or inconsistent annotations.
+- Used Jupyter-based workflows to visualise and inspect sequence-level data.
+- Cleaned generated preprocessing artefacts from version control and stabilised repository hygiene.
+
+---
+
+#### Technical outcomes
+
+By the end of Week 4:
+
+- The project was fully restructured into a CorrNet-style framework with KSL treated as a first-class dataset.
+- A stable and scalable ISLR pipeline was established, validated at both medium and large scale.
+- Fundamental limitations of CTC-based decoding for isolated sign recognition were identified and resolved through architectural redesign.
+- The CorrNet encoder was confirmed as a reusable backbone across multiple task formulations.
+- A clear transition path from recognition toward sequence-level translation was defined.
+- Tooling for gloss–sentence dataset inspection and preprocessing was in place.
+
+---
+
+#### Outcome
+
+Week 4 marked a decisive transition from framework integration to **architectural clarity**.
+
+By the end of the week:
+- isolated sign recognition was functionally solved within the project scope
+- remaining challenges were no longer related to system stability, but to task formulation and modelling strategy
+- the project direction shifted decisively toward sequence-level translation research
+
+This phase established a robust foundation for subsequent work on CSLR and end-to-end sign language translation, grounded in validated components and informed design decisions rather than trial-and-error experimentation.
+
+---
+<a id="week5"></a>
+### Week 5 (13–16 January 2026)
+
+#### Focus  
+Transition from isolated recognition toward sequence-level translation through dataset construction, benchmarking, and major workflow restructuring.
+
+Week 5 marked a shift away from model-centric debugging and toward **data and workflow readiness**. The emphasis moved to constructing sentence–gloss datasets, evaluating translation feasibility using large language models, and restructuring the development environment to support scalable CSLR and SLT experimentation.
+
+---
+
+#### Summary of work
+
+**Sentence–gloss extraction pipeline development (13–14 Jan)**  
+- Started development of `glossTL/pull_script.py` to parse sentence–gloss annotations stored in XLSX files.
+- Implemented a full extraction pipeline:
+  - XLSX files loaded via `pandas.read_excel`
+  - converted into DataFrame format
+  - gloss-level segments (label, start time, end time) parsed and ordered
+  - segments concatenated into full gloss sequences
+- Constructed a normalised dataset containing:
+  - gloss sequences
+  - corresponding natural-language sentences
+  - associated metadata
+- Exported processed data into JSON format and materialised the dataset as `ksl_sentence_gloss.json`.
+- Added validation and inspection tooling to detect malformed or inconsistent annotation entries.
+- Used Jupyter-based workflows to visualise dataset structure and verify assumptions.
+
+**Gloss-to-sentence translation experiments (14–15 Jan)**  
+- Extracted gloss–sentence pairs from the constructed dataset.
+- Evaluated gloss-to-sentence translation using multiple large language models.
+- Logged predicted sentences alongside ground-truth references in spreadsheet form.
+- Implemented semantic evaluation metrics:
+  - BERTScore
+  - COMET
+- Completed benchmarking across four models, enabling comparative analysis of translation quality beyond surface-level string matching.
+
+**Repository maintenance and stability improvements (15 Jan)**  
+- Identified severe Git performance issues caused by tracking a nested research repository containing ~13,000 files.
+- Removed the nested repository from direct tracking.
+- Reintroduced it correctly as a Git submodule, restoring repository responsiveness and maintainability.
+
+**Workflow refinement and dataset normalisation (15–16 Jan)**  
+- Continued iterative refinement of extraction logic to streamline the end-to-end workflow.
+- Improved handling of noisy annotations and inconsistent formatting.
+- Implemented gloss sequence cleanup logic to merge overlapping or duplicated temporal segments
+  (e.g. overlapping identical gloss labels merged into a single continuous segment).
+- This step was necessary to generate clean ground-truth sequences suitable for CSLR training.
+
+**Major environment and performance restructuring (16 Jan)**  
+- Migrated the entire project from the Windows filesystem (`/mnt/c/...`) into the native WSL filesystem (`/home/...`).
+- Relocated all datasets and cached preprocessing outputs into WSL.
+- This eliminated cross-filesystem I/O overhead and resulted in significant performance improvements for:
+  - preprocessing scripts
+  - dataset loading
+  - caching
+  - long-running training jobs
+- Prepared the environment for scalable sequence-level training.
+
+---
+
+#### Technical outcomes
+
+By the end of Week 4:
+
+- A complete sentence–gloss extraction pipeline was implemented and validated.
+- Translation feasibility using large language models was empirically evaluated.
+- Objective semantic evaluation metrics (BERTScore and COMET) were integrated.
+- Gloss-sequence ground truth was cleaned and normalised for CSLR training.
+- The entire development workflow was migrated into a high-performance WSL-native environment.
+- Repository structure and Git performance were stabilised.
+
+---
+
+#### Outcome
+
+Week 4 marked a decisive transition from isolated sign recognition toward **sequence-level modelling and translation**.
+
+By the end of the week:
+- the project had shifted focus from model debugging to data readiness
+- sentence–gloss datasets suitable for CSLR and SLT experimentation were available
+- translation strategies could be evaluated empirically rather than assumed
+- the development environment was capable of supporting large-scale training workloads
+
+This phase established the data, tooling, and workflow foundation required for subsequent work on continuous sign language recognition and end-to-end sign language translation.
+
+---
+<a id="week6"></a>
+### Week 6 (19–20 January 2026)
+
+#### Focus  
+Integration and stabilisation of continuous sign language recognition (CSLR), transitioning from dataset preparation toward executable sequence-level training.
+
+Week 6 focused on extending the existing pipeline to support CSLR datasets, resolving runtime and environment-level issues, and achieving the first successful end-to-end CSLR run.
+
+Commencement of documentation and logging work started this week.
+
+---
+
+#### Summary of work
+
+**NIASLG1 preprocessing integration (19 Jan)**  
+- Finalised refactoring of preprocessing scripts to introduce a dedicated NIASLG1 dataset mode.
+- Extended caching and preprocessing logic to support:
+  - sentence-level video samples
+  - gloss-sequence ground truth
+- Enabled the preprocessing pipeline to handle continuous sign language data rather than isolated-word samples.
+
+**CSLR framework preparation and initial training attempts (19 Jan)**  
+- Added missing CorrNet CSLR components required for training and evaluation.
+- Integrated CSLR-related modules into the existing execution pipeline.
+- Performed multiple CSLR training attempts.
+- Failures were primarily caused by:
+  - small initialisation bugs only observable during runtime
+  - WSL environment constraints (disk space and memory allocation)
+- Preprocessing outputs and dataloader logic were not identified as the root cause.
+
+**CSLR stabilisation and first successful run (20 Jan)**  
+- Continued iterative bug-fixing across training scripts, configuration files, and execution flow.
+- Resolved remaining runtime blockers preventing CSLR from completing.
+- Achieved the first successful end-to-end CSLR training and evaluation run using a small sample NIASLG1 dataset.
+- Recorded initial performance:
+  - Word Error Rate (WER): ~28%
+- Confirmed functional integration of:
+  - preprocessing
+  - dataset loading
+  - model execution
+  - decoding
+  - evaluation.
+
+**Documentation initiation (20 Jan)**  
+- Began writing internal documentation (`Log.md`) to record:
+  - workflow decisions
+  - known issues
+  - implementation context
+- Established a basis for structured handover documentation.
+
+---
+
+#### Technical outcomes
+
+By the end of 20 January:
+
+- Preprocessing and caching supported both ISLR and CSLR datasets.
+- The CSLR pipeline was fully executable end-to-end.
+- Runtime and environment-level blockers were identified and resolved.
+- A first quantitative CSLR baseline (28% WER) was established.
+- Documentation efforts were initiated to support continuity and handover.
+
+---
+
+#### Outcome
+
+Week 6 marked the project’s transition from **dataset readiness to functional sequence-level recognition**, with emphasis of preparing for project handover.
+
+By the end of this period:
+- CSLR training was no longer theoretical and could be executed in practice
+- the full pipeline from preprocessing through evaluation was operational
+- documentation work commenced for project handover
+
+This established a proof-of-concept baseline that theoretical end-to-end translations from sign language sentences to Korean sentences was possible and a fully working skeleton was completed.
+
+
 ## Notes

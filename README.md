@@ -13,6 +13,13 @@ Change /configs/KSL.yaml task value to "islr" for ISLR dataset, anything else fo
 | -------- | ---------- | ----------- |
 | ResNet18 | 93.49% | [[Google Drive]](https://drive.google.com/file/d/1fROBkaHk_u3cRPfnz-oZwGLxFpuciLsT/view?usp=sharing) |
 
+## NIASLG1 COLDWAVE Trained Model
+
+| Backbone | Dev WER | Pretrained model                                             |
+| -------- |---------| ----------- |
+| ResNet18 | 28.86%  | [[Google Drive]](https://drive.google.com/file/d/1tanTHvmSPkiWS-anJ_HvI7riRE26pb9O/view?usp=sharing) |
+
+
 
 ## Gloss Sequence - Korean Benchmark Results
 
@@ -23,4 +30,4 @@ Change /configs/KSL.yaml task value to "islr" for ISLR dataset, anything else fo
 | Gemini 3 Flash | 0.928626  | 0.878687 |
 | Gemini 3 Pro   | 0.930102  | 0.883101 |
 
-**Dataset:** [glossTL/data.csv](glossTL/data.csv)
+**Test sequence/results:** [glossTL/data.csv](glossTL/data.csv)
