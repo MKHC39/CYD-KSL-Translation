@@ -23,6 +23,10 @@
 
 ## Weekly Engineering Log
 
+- [Week 1 (15–19 December 2025)](#week1)
+- [Weeks 2–3 (22–30 December 2025)](#week23)
+
+<a id="week1"></a>
 ### Week 1 (15–19 December 2025)
 
 #### Focus  
@@ -110,6 +114,118 @@ By the end of the week, the following learning objectives had been achieved:
   - 1D, 2D, and 3D convolutional architectures and their respective use cases
 
 This week established the conceptual vocabulary and structural intuition required to meaningfully engage with sign language recognition and translation research in subsequent implementation phases.
+
+<a id="week23"></a>
+### Weeks 2–3 (22–30 December 2025)
+
+#### Focus  
+Implementation of the preprocessing pipeline, dataset abstraction, and integration with an existing SLR framework (CorrNet+).
+
+Following the preliminary research phase in Week 1, Weeks 2–3 marked the transition into active system construction. Work during this period focused on transforming conceptual understanding into executable code, with particular emphasis on data preprocessing, performance, and framework compatibility.
+
+---
+
+#### Summary of work
+
+**Initial preprocessing and dataset scaffolding (22 Dec)**  
+- Established the implementation-oriented repository structure.
+- Introduced dedicated modules for:
+  - preprocessing
+  - dataset handling
+  - model components
+- Implemented early preprocessing scripts for:
+  - video frame extraction
+  - border handling and cropping
+  - clip-level processing
+- Created initial dataset abstractions compatible with PyTorch (`Dataset`, `DataLoader`).
+- Introduced clip-level caching logic to separate expensive preprocessing from runtime data loading.
+
+**Design-driven caching decision (22–23 Dec)**  
+- Early testing revealed that performing preprocessing inside `__getitem__` was prohibitively slow, as each sample access required reopening and reprocessing full video files.
+- To resolve this, preprocessing was decoupled from data loading:
+  - preprocessing is executed once per clip
+  - processed outputs are cached to disk
+  - dataset loaders consume cached tensors directly
+- This decision fundamentally shaped the dataset architecture used throughout the remainder of the project.
+
+**Pipeline refinement and stabilisation (23 Dec)**  
+- Refined preprocessing scripts to improve correctness and robustness.
+- Iteratively updated dataset loaders to align with actual cached data formats.
+- Scanned for unclean data in dataset that can result in errors.
+- Resolved mismatches between preprocessing outputs and dataset assumptions discovered during runtime testing.
+
+**Preparation for CorrNet+ injection (24 Dec)**  
+- Began restructuring code to match CorrNet+ expectations around:
+  - dataset interfaces
+  - argument structure
+  - module layout
+- Introduced KSL-specific dataset modules to mirror CorrNet-style imports.
+- Added early dictionary and label-mapping artefacts required for dataset indexing.
+- Removed standalone entrypoints in favour of framework-style script execution.
+- Transitioned the project from a standalone prototype toward an injectable architecture.
+
+**CorrNet+ injection completion and evaluation-stage debugging (29 Dec)**  
+- Completed CorrNet+ injection to the point where the framework could successfully:
+  - load the custom cached KSL dataset
+  - accept the custom `KSL_pydata.py` dataset feeder
+  - execute the training/inference pipeline without crashing at data ingestion
+- Confirmed that dataset preprocessing, caching, and loading were functionally compatible with CorrNet’s internal data flow.
+- Encountered failures specifically during the **evaluation stage**, rather than during training or forward execution.
+- Investigated and patched evaluation-time incompatibilities, including:
+  - missing or empty arguments expected by CorrNet evaluation utilities
+  - absence of STM files required by sequence-level evaluation code paths
+- Implemented compatibility features such as:
+  - placeholder / empty argument handling
+  - STM generation utilities to satisfy CorrNet evaluation assumptions
+- This clarified the boundary between successful framework injection and unresolved evaluation constraints tied to task formulation.
+
+**Separate ISLR evaluation implementation and validation (30 Dec)**  
+- Implemented a **separate ISLR evaluation function** independent of CorrNet’s default evaluation pipeline.
+- This was motivated by persistent evaluation-stage failures whose root cause was not yet understood at the time.
+- The new evaluation function was designed to:
+  - directly consume outputs from the custom cached KSL dataset
+  - bypass parts of CorrNet’s tightly coupled evaluation assumptions
+- Successfully validated the evaluation function on a **small-scale test dataset**, confirming that:
+  - decoding logic executed end-to-end
+  - evaluation metrics could be computed without runtime failure
+- Although the function did not yet scale cleanly to the full dataset, it provided a controlled environment for isolating evaluation-related issues.
+
+This work established an alternative evaluation pathway, enabling continued progress despite unresolved compatibility issues in the original framework.
+
+---
+
+#### Technical outcomes
+
+By the end of Weeks 2–3:
+
+- A complete preprocessing pipeline was implemented for video-based sign language data.
+- Dataset abstraction and caching were established as core architectural components, enabling repeated experimentation without reprocessing raw videos.
+- The custom cached KSL dataset was successfully injected into the CorrNet+ framework, with the framework able to:
+  - load the custom dataset feeder
+  - execute training and inference without crashing at data ingestion
+- Evaluation-stage failures were identified as the primary remaining blocker, occurring after successful model execution.
+- Compatibility features were introduced to reduce evaluation-time failures, including:
+  - placeholder handling for missing or empty arguments
+  - STM generation to satisfy sequence-evaluation requirements
+- A separate ISLR evaluation function was implemented to isolate evaluation behaviour from CorrNet’s internal pipeline.
+- The custom evaluation function was able to run end-to-end on a small-scale test dataset.
+
+At this stage, the exact cause of evaluation inconsistencies was not yet understood.
+
+---
+
+#### Outcome
+
+Weeks 2–3 established the project’s **first runnable and testable system state**.
+
+By the end of this phase:
+- preprocessing, caching, and dataset loading were functionally stable
+- CorrNet+ could be executed using the custom KSL dataset
+- evaluation failures were narrowed down to sequence-level evaluation logic rather than preprocessing or data ingestion
+
+Although evaluation results were inconsistent, the underlying cause had not yet been identified at this point.
+
+The focus in this phase was to establish a fully runnable system end-to-end baseline. While that goal had been achieved, it was clear that further work was required to diagnose and resolve evaluation-stage behaviour — which became the focus of the following week.
 
 ---
 ## Notes

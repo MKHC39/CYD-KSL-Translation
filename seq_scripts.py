@@ -15,8 +15,6 @@ import gc
 
 
 def _tqdm(iterable, **kwargs):
-    conv_ret = None
-    lstm_ret = 100.0
     try:
         from tqdm.auto import tqdm
         return tqdm(iterable, **kwargs)
@@ -216,6 +214,8 @@ def seq_eval(cfg, loader, model, device, mode, epoch, work_dir, recoder,
     total_sent = []
     total_info = []
     total_conv_sent = []
+    conv_ret = None
+    lstm_ret = 100.0
     stat = {i: [0, 0] for i in range(len(loader.dataset.dict))}
     for batch_idx, data in enumerate(tqdm(loader)):
         recoder.record_timer("device")
