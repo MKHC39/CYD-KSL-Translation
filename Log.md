@@ -11,13 +11,143 @@
 
 ## Overview
 
+This repository contains the research, implementation, and experimentation work completed during a six-week internship focused on Korean Sign Language (KSL) recognition and translation.
+
+The project began with isolated sign language recognition (ISLR) and progressively expanded toward continuous sign language recognition (CSLR) and sentence-level translation. Work included:
+
+- dataset preprocessing and caching
+- model integration and refactoring
+- evaluation pipeline design
+- large-scale experimentation
+- analysis of translation feasibility using large language models
+
+The final system supports:
+
+- **Isolated Sign Language Recognition (ISLR)**  
+  using the **NIASL2021 dataset**, implemented as a classification task with a CNN–temporal encoder architecture.
+
+- **Continuous Sign Language Recognition (CSLR)**  
+  using the **NIASLG1 dataset**, implemented with gloss-sequence modelling and a **CTC-based decoder**.
+
+- **Sentence–gloss dataset construction**  
+  enabling extraction and normalisation of gloss–sentence pairs for downstream translation and analysis.
+
+The repository is structured to support both experimentation and handover, with clear separation between preprocessing, modelling, evaluation, and research documentation.
+
+
 ---
 
 ## Project Scope
 
+The scope of this project was to design, implement, and validate a functional pipeline for Korean Sign Language recognition and to investigate feasible pathways toward sentence-level translation.
+
+The work was intentionally scoped to balance research exploration with practical system implementation.
+
+### In scope
+
+- **Dataset preprocessing and caching**
+  - Support for both isolated-word and continuous sign language datasets.
+  - Efficient preprocessing pipelines to enable scalable experimentation.
+
+- **Isolated Sign Language Recognition (ISLR)**
+  - Implementation and validation using the NIASL2021 dataset.
+  - Model formulation as a classification task using a CNN–temporal encoder.
+  - Large-scale training and evaluation to confirm system correctness.
+
+- **Continuous Sign Language Recognition (CSLR)**
+  - Integration of NIASLG1 dataset.
+  - Gloss-sequence modelling using a CTC-based decoding framework.
+  - End-to-end execution from preprocessing through evaluation.
+
+- **Evaluation pipeline development**
+  - Support for ISLR accuracy-based evaluation.
+  - Support for CSLR sequence-level evaluation using Word Error Rate (WER).
+
+- **Sentence–gloss dataset construction**
+  - Extraction and normalisation of gloss–sentence pairs from annotation files.
+  - Dataset preparation suitable for translation-level experimentation.
+
+- **Translation feasibility analysis**
+  - Empirical evaluation of gloss-to-sentence translation using large language models.
+  - Quantitative comparison using semantic evaluation metrics (BERTScore, COMET).
+
+### Out of scope
+
+- **Full end-to-end sign language translation training**
+  - Transformer-based SLT models were not trained within this project due to dataset size and pretraining requirements.
+
+- **Large-scale pretraining**
+  - No pretraining of visual encoders or language models was performed.
+
+- **Production deployment**
+  - The system was developed for research and experimentation purposes only.
+
+- **Dataset creation**
+  - No new sign language datasets were collected; all work used existing datasets.
+
+This scope ensured the project delivered a fully functional research pipeline while maintaining realistic boundaries for time and computational constraints.
+
+
 ---
 
 ## Repository Structure
+
+This repository contains the full codebase, data interfaces, and experiment tooling for Korean Sign Language recognition and translation research. The layout matches the structure of the original CorrNet+ codebase, with additional directories for project-specific documentation and experiments.
+
+### Main directories
+
+- **CYDProject/** *(Git submodule)*  
+  Research material, reference notes, and sample datasets. Imported as a submodule to avoid tracking large files directly in the main repo.
+
+- **configs/**  
+  YAML configuration files, configured for the custom KSL dataset and feeder.
+
+- **dataset/**  
+  Dataset loader for model training and evaluation pipelines. Only includes KSL-specific feeder that bridge custom preprocessed outputs with the training framework without inclusion of original CorrNet+ feeder.
+
+- **evaluation/slr_eval/**  
+  CorrNet+ Utilities and evaluation scripts needed for sequence-level recognition metrics (e.g., WER calculation).
+
+- **glossTL/**  
+  Translation-layer tooling, including scripts for parsing gloss–sentence pairs, dataset construction, and LLM benchmarking.
+
+- **modules/**  
+  Model component implementations such as encoders, backbone networks, temporal layers, and loss definitions, modified from CorrNet+.
+
+- **preprocessing/**  
+  Custom preprocessing and caching scripts for NIASL2021 and NIASLG1 dataset to extract and store features from raw video and annotation data.
+
+- **utils/**  
+  Shared utilities used across the training and evaluation pipelines, such as decoding helpers, logging utilities, and performance tools.
+
+### Root directory files
+
+- **.gitattributes / .gitignore / .gitmodules**  
+  Git configuration and ignore rules, including submodule definitions and excluded directories.
+
+- **Log.md**  
+  Detailed engineering log recording daily and weekly work; the primary handover document.
+
+- **README.md**  
+  Setup and usage instructions, including data preparation steps and link summaries for benchmarks.
+
+- **environment.yml / requirements.txt**  
+  Dependency manifests for environment reproducibility.
+
+- **main.py / seq_scripts.py / slr_network.py**  
+  Primary execution scripts used to launch training and evaluation runs.
+
+---
+
+### Notes on structure
+
+- Preprocessing and dataset loading are separated to support efficient reuse and to avoid repeated video decoding.
+- The translation pipeline (glossTL) is deliberately isolated from the base recognition pipeline.
+- Config files and utilities centralise parameterisation and avoid hard-coding values in scripts.
+- Submodule usage ensures large research materials don’t degrade Git performance.
+
+This layout supports both **reproducible research workflows** and **clean project handover**.
+
 
 ---
 
@@ -27,6 +157,7 @@
 - [Weeks 2–3 (22–30 December 2025)](#week23)
 - [Week 4 (5-9 January 2026)](#week4)
 - [Week 5 (13–16 January 2026)](#week5)
+- [Week 6 (19–20 January 2026)](#week6)
 
 <a id="week1"></a>
 ### Week 1 (15–19 December 2025)
@@ -387,7 +518,7 @@ Week 5 marked a shift away from model-centric debugging and toward **data and wo
 
 #### Technical outcomes
 
-By the end of Week 4:
+By the end of Week 5:
 
 - A complete sentence–gloss extraction pipeline was implemented and validated.
 - Translation feasibility using large language models was empirically evaluated.
@@ -400,7 +531,7 @@ By the end of Week 4:
 
 #### Outcome
 
-Week 4 marked a decisive transition from isolated sign recognition toward **sequence-level modelling and translation**.
+Week 5 marked a decisive transition from isolated sign recognition toward **sequence-level modelling and translation**.
 
 By the end of the week:
 - the project had shifted focus from model debugging to data readiness
@@ -484,7 +615,105 @@ By the end of this period:
 - the full pipeline from preprocessing through evaluation was operational
 - documentation work commenced for project handover
 
-This established a proof-of-concept baseline that theoretical end-to-end translations from sign language sentences to Korean sentences was possible and a fully working skeleton was completed.
+This established a proof-of-concept baseline demonstrating that end-to-end translation from sign language sequences to Korean sentences is theoretically feasible, with a fully functional system skeleton in place.
 
+---
 
 ## Notes
+
+This section documents important implementation details, limitations, and assumptions that are not immediately obvious from code or commit history. These notes are intended to support future development and prevent common sources of confusion.
+
+---
+
+### Dataset-specific assumptions
+
+- **NIASL2021 (ISLR)** and **NIASLG1 (CSLR)** differ significantly in structure and cannot share preprocessing logic.
+- Preprocessing scripts are dataset-specific by design and should not be unified without careful inspection of annotation formats.
+- File naming conventions, annotation formats, and metadata structures differ across datasets.
+- The argument for dataset is passed via command-line arguments at runtime and is required.
+
+---
+
+### Preprocessing and caching design
+
+- All video preprocessing is performed **offline** and cached to disk.
+- Runtime preprocessing inside `Dataset.__getitem__` was intentionally avoided due to severe performance degradation.
+- Any modification to preprocessing scripts requires regeneration of cached files.
+
+---
+
+### CTC-related limitations
+
+- CTC decoding is highly sensitive to temporal sequence length.
+- Sequences with effective temporal length of 1 can collapse into empty outputs during decoding.
+- This behaviour previously caused:
+  - silent NaN loss propagation
+  - blank evaluation entries
+  - index mismatches during evaluation
+- These failures may not surface during small-scale tests and only appear under larger datasets.
+
+---
+
+### ISLR vs CSLR formulation
+
+- ISLR is implemented as a **classification task** using cross-entropy loss.
+- CSLR is implemented as a **sequence modelling task** using CTC decoding.
+- Although both tasks share the same encoder backbone, their decoding and evaluation pipelines are intentionally separate.
+- Attempting to unify ISLR and CSLR decoding logic is strongly discouraged.
+
+---
+
+### Encoder reuse assumption
+
+- The CorrNet encoder (2D CNN + temporal convolution + BiLSTM) is treated as a reusable backbone.
+- Decoder heads and evaluation logic are task-specific.
+- This design allows:
+  - ISLR
+  - CSLR
+  - potential end-to-end SLT
+  to share feature extraction while diverging at decoding.
+
+---
+
+### Translation experiments
+
+- Gloss-to-sentence translation experiments were conducted for feasibility analysis only.
+- Large language models were evaluated using extracted gloss sequences, not raw video.
+- Evaluation metrics (BERTScore, COMET) measure semantic similarity rather than grammatical correctness.
+- These experiments do not constitute a production translation system.
+
+---
+
+### Environment considerations
+
+- Running preprocessing or training from the Windows filesystem (`/mnt/c`) inside WSL causes severe I/O slowdown.
+- The project, datasets, and caches should reside entirely within the native WSL filesystem (`/home/...`).
+- Insufficient WSL disk or memory allocation will cause hard crashing of the whole WSL system.
+
+---
+
+### Git and repository management
+
+- The `CYDProject` directory is maintained as a Git submodule to prevent repository performance degradation.
+- Generated directories such as `cache/`, `work_dir/`, and preprocessing outputs are intentionally ignored.
+
+---
+
+### Known limitations
+
+- No large-scale pretrained models were used.
+- End-to-end sign language translation models were not trained due to dataset and computational constraints.
+- Current CSLR performance (~28% WER) represents an early baseline rather than an optimised result.
+- Current models for both ISLR and CSLR were only trained on a small sample of the dataset.
+
+---
+
+### Intended future direction
+
+Potential next steps include:
+
+- CSLR model optimisation and hyperparameter tuning
+- investigation of transformer-based sequence modelling
+- integration of gloss-level CSLR outputs with downstream translation models
+- exploration of end-to-end sign language translation with pretrained encoders
+

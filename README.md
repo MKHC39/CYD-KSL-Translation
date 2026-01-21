@@ -1,3 +1,7 @@
+# This is a fork of [CorrNet+](https://github.com/hulianyuyy/CorrNet_Plus), modified for Korean Sign Language as part of CYDInfoTech Internship project.
+
+
+
 ## Data Preparation
 
 1. from /preprocessing/ run KSL_dataset_cache.py (-h for args). (Currently compatible with AIHUB NIASL2021 and NIASLG1)
