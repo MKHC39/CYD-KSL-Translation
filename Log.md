@@ -96,45 +96,45 @@ This repository contains the full codebase, data interfaces, and experiment tool
 
 ### Main directories
 
-- **CYDProject/** *(Git submodule)*  
+- **[CYDProject/](CYDProject/)** *(Git submodule)*  
   Research material, reference notes, and sample datasets. Imported as a submodule to avoid tracking large files directly in the main repo.
 
-- **configs/**  
+- **[configs/](configs/)**  
   YAML configuration files, configured for the custom KSL dataset and feeder.
 
-- **dataset/**  
+- **[dataset/](dataset/)**  
   Dataset loader for model training and evaluation pipelines. Only includes KSL-specific feeder that bridge custom preprocessed outputs with the training framework without inclusion of original CorrNet+ feeder.
 
-- **evaluation/slr_eval/**  
+- **[evaluation/slr_eval/](evaluation/slr_eval/)**  
   CorrNet+ Utilities and evaluation scripts needed for sequence-level recognition metrics (e.g., WER calculation).
 
-- **glossTL/**  
+- **[glossTL/](glossTL/)**  
   Translation-layer tooling, including scripts for parsing gloss–sentence pairs, dataset construction, and LLM benchmarking.
 
-- **modules/**  
+- **[modules/](modules/)**  
   Model component implementations such as encoders, backbone networks, temporal layers, and loss definitions, modified from CorrNet+.
 
-- **preprocessing/**  
+- [**preprocessing/**](preprocessing/)  
   Custom preprocessing and caching scripts for NIASL2021 and NIASLG1 dataset to extract and store features from raw video and annotation data.
 
-- **utils/**  
+- [**utils/**](utils/)  
   Shared utilities used across the training and evaluation pipelines, such as decoding helpers, logging utilities, and performance tools.
 
 ### Root directory files
 
-- **.gitattributes / .gitignore / .gitmodules**  
+- **[.gitattributes](.gitattributes) / [.gitignore](.gitignore) / [.gitmodules](.gitmodules)**  
   Git configuration and ignore rules, including submodule definitions and excluded directories.
 
-- **Log.md**  
+- [**Log.md**](Log.md)  
   Detailed engineering log recording daily and weekly work; the primary handover document.
 
-- **README.md**  
+- [**README.md**](README.md)  
   Setup and usage instructions, including data preparation steps and link summaries for benchmarks.
 
-- **environment.yml / requirements.txt**  
+- **[environment.yml](environment.yml) / [requirements.txt](requirements.txt)**  
   Dependency manifests for environment reproducibility.
 
-- **main.py / seq_scripts.py / slr_network.py**  
+- **[main.py](main.py) / [seq_scripts.py](seq_scripts.py) / [slr_network.py](slr_network.py)**  
   Primary execution scripts used to launch training and evaluation runs.
 
 ---
@@ -247,6 +247,7 @@ By the end of the week, the following learning objectives had been achieved:
   - 1D, 2D, and 3D convolutional architectures and their respective use cases
 
 This week established the conceptual vocabulary and structural intuition required to meaningfully engage with sign language recognition and translation research in subsequent implementation phases.
+All research is abailable in the submodule [`CYDProject`](CYDProject/)
 
 <a id="week23"></a>
 ### Weeks 2–3 (22–30 December 2025)
