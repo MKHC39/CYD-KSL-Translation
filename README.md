@@ -33,7 +33,7 @@ Sign Language Translation can be largely divided into three different subsets:
 - Continuous Sign Language Recognition (CSLR)
 - Language Translation (SLT)
 
-Common in all three tasks is the need for preprocessing to convert the data into a format suitable for training. The full list of papers reviewed is available in [**SLR Papers.md**](CYDProject/SLR Papers.md) alongside a summary table including available online datasets and model evaluations.
+Common in all three tasks is the need for preprocessing to convert the data into a format suitable for training. The full list of papers reviewed is available in [**SLR Papers.md**](https://github.com/MKHC39/CYDProject/blob/main/SLR%20Papers.md) alongside a summary table including available online datasets and model evaluations.
 
 ## Data Preparation
 Currently only [**NIASL2021**](https://aihub.or.kr/aihubdata/data/view.do?pageIndex=1&currMenu=115&topMenu=100&srchOptnCnd=OPTNCND001&srchDetailCnd=DETAILCND001&srchOrder=ORDER001&srchPagePer=20&searchKeyword=%EC%88%98%EC%96%B4%EB%B2%88%EC%97%AD&aihubDataSe=data&dataSetSn=103) and [**NIASLG1**](https://aihub.or.kr/aihubdata/data/view.do?pageIndex=1&currMenu=115&topMenu=100&srchOptnCnd=OPTNCND001&srchDetailCnd=DETAILCND001&srchOrder=ORDER001&srchPagePer=20&searchKeyword=%EC%88%98%EC%96%B4%EB%B2%88%EC%97%AD&aihubDataSe=data&dataSetSn=636) datasets are supported.
