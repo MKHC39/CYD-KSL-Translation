@@ -1,15 +1,5 @@
 # Project Summary — Korean Sign Language Recognition & Translation
 
-## Overview
-
-This project focused on the design, implementation, and evaluation of a research-grade pipeline for Korean Sign Language (KSL) recognition and translation.
-
-Work progressed from isolated sign recognition toward continuous sign language recognition and sentence-level translation, with emphasis on building a functional, extensible system rather than producing a single model result.
-
-The final system supports preprocessing, training, evaluation, and experimentation across multiple task formulations.
-
----
-
 ## Key Contributions
 
 ### 1. Dataset preprocessing and caching pipeline
@@ -81,15 +71,4 @@ The completed system supports:
 
 ---
 
-## Outcome
-
-By the end of the internship, the project delivered:
-
-- A fully executable research pipeline
-- Validated ISLR and CSLR task implementations
-- Documented architectural decisions and limitations
-- A strong foundation for future work on end-to-end sign language translation
-
-This work prioritised system correctness, reproducibility, and clarity of design over isolated performance optimisation, enabling continued research and development beyond the internship period.
-
-Read `Log.md` for more details.
+Read [Log.md](Log.md) for more details.

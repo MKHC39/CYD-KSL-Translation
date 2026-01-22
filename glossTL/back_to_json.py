@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def csv_to_jsonl_fixed(in_csv: Path, out_jsonl: Path, pred_col: int = 4) -> None:
+def csv_to_jsonl_fixed(in_csv: Path, out_jsonl: Path, pred_col: int) -> None:
     """
     For your specific CSV:
       col 1 = entry id

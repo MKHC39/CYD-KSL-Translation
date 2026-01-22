@@ -1,6 +1,10 @@
 from pathlib import Path
 import subprocess
+from typing import Optional
+
 import numpy as np
+import pandas as pd
+from pathmagic import smart_path as sp
 
 def to_wsl_path(p: str) -> Path:
     """
@@ -46,7 +50,10 @@ def inspect_array(arr: np.ndarray, name: str) -> None:
 def inspect_npy_or_npz(path: Path) -> None:
     obj = safe_load(path, allow_pickle=False)
     if isinstance(obj, np.ndarray):
+        #df = pd.DataFrame(obj)
         inspect_array(obj, path.name)
+        print(type(obj.item()))
+        #return df
     else:
         keys = list(obj.keys())
         print("archive keys:", keys)
@@ -65,10 +72,11 @@ def safe_load(path: Path, allow_pickle: bool = False):
 
 
 # ---- quick interactive use ----
-p = to_wsl_path(input("Paste Windows or Linux path to .npy/.npz: "))
+p = sp(r'\\wsl.localhost\Ubuntu\home\harrison\Workplace\workspaces\ksl\preprocessing\cache\NIA_SL_G1_COLDWAVE000070_1_TW07_R.npy')
 if not p.exists():
     raise FileNotFoundError(p)
 print("Resolved path:", p)
-inspect_npy_or_npz(p)
+output = inspect_npy_or_npz(p)
+
 
 

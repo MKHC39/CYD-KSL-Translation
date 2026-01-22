@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 import subprocess
 
+from pathmagic import smart_path as sp
+
 
 def wsl_path(p: str) -> Path:
     """
@@ -20,7 +22,6 @@ def wsl_path(p: str) -> Path:
     s = p.strip().strip('"').strip("'")
     if not s:
         raise ValueError("Empty path")
-
     # Handle WSL UNC path copied from Windows Explorer
     # Example: \\wsl.localhost\Ubuntu\home\user\project
     if r"wsl.localhost" in s.lower():
@@ -28,13 +29,13 @@ def wsl_path(p: str) -> Path:
         # ["", "", "wsl.localhost", "Ubuntu", "home", "user", ...]
         if len(parts) >= 5:
             s = "/" + "/".join(parts[4:])  # drop \\wsl.localhost\Distro
-            return Path(s)
+            return Path(s).expanduser().resolve()
 
     # Heuristic: Windows drive path like C:\...
     if len(s) >= 3 and s[1] == ":" and (s[2] == "\\" or s[2] == "/"):
         s = subprocess.check_output(["wslpath", "-u", s], text=True).strip()
 
-    return Path(s)
+    return Path(s).expanduser().resolve()
 
 
 def parse_df(df: pd.DataFrame, source: str ="<df>", fatal_codes: set[str] | None = None
@@ -521,7 +522,7 @@ def save_jsonl(
 
 if __name__ == "__main__":
     win_path = input("Please enter your Windows path: ")
-    root = wsl_path(win_path)
+    root = sp(win_path)
 
     meta_all, seg_all, drops_all = merge_folder_outputs(root)
 

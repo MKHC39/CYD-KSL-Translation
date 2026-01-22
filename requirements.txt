@@ -80,6 +80,7 @@ nest-asyncio==1.6.0
 networkx==3.6.1
 notebook==7.5.1
 notebook_shim==0.2.4
+npy-reader==1.1.2
 numpy @ file:///croot/numpy_and_numpy_base_1755590845055/work/dist/numpy-1.26.4-cp311-cp311-linux_x86_64.whl#sha256=8d550755d6f1eca4029ce08d65b8fbc2cc141530ea33bf29eb9a8dd2fb7d36f4
 nvidia-cublas-cu12==12.8.4.1
 nvidia-cuda-cupti-cu12==12.8.90
@@ -103,6 +104,7 @@ packaging==25.0
 pandas==2.3.3
 pandocfilters==1.5.1
 parso==0.8.5
+pathmagic @ git+https://github.com/Muranieum/pathmagic.git@8f6541ac5e1dc31d48ba87023f3aca9bb5585e94
 pexpect==4.9.0
 pillow==12.1.0
 platformdirs==4.5.1
@@ -119,6 +121,7 @@ pyctcdecode @ file:///home/conda/feedstock_root/build_artifacts/pyctcdecode_1674
 Pygments==2.19.2
 pygtrie @ file:///home/conda/feedstock_root/build_artifacts/pygtrie_1734664549100/work
 pyparsing==3.3.1
+PySimpleGUI==5.0.8.3
 python-dateutil==2.9.0.post0
 python-json-logger==4.0.0
 pytorch-lightning==2.6.0

@@ -3,9 +3,10 @@ import random
 from glossTL.pull_script import wsl_path
 from pathlib import Path
 import pandas as pd
+from pathmagic import smart_path as sp
 
 
-def main(jsonl_path: Path, n: int | None = None, sample: bool = False ) -> None | pd.DataFrame:
+def main(jsonl_path: Path, n: int | None = None) -> None | pd.DataFrame:
     sent_str = ''
     gloss_str = ''
     sent_no = 0
@@ -14,7 +15,7 @@ def main(jsonl_path: Path, n: int | None = None, sample: bool = False ) -> None 
         lines = [line for line in f if line.strip()]
 
 
-    if sample:
+    if n is not None:
         if n > len(lines):
             print(f"Requested {n} entries, but only {len(lines)} available. Showing all.")
             n = len(lines)
@@ -58,7 +59,7 @@ def line_lookup(jsonl_path: Path, n: int) -> None:
 
 
 if __name__ == "__main__":
-    json_path = wsl_path(r"C:\Workplace\workspaces\ksl\glossTL") / "ksl_sentence_gloss.json"
+    json_path = sp(r"~/Workplace/workspaces/ksl/glossTL") / "training_sentence_gloss.jsonl"
 
     n = int(input("How many random entries to print? "))
     main(json_path, n)
