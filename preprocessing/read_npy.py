@@ -72,7 +72,7 @@ def safe_load(path: Path, allow_pickle: bool = False):
 
 
 # ---- quick interactive use ----
-p = sp(r'\\wsl.localhost\Ubuntu\home\harrison\Workplace\workspaces\ksl\preprocessing\cache\NIA_SL_G1_COLDWAVE000070_1_TW07_R.npy')
+p = sp(r'\\wsl.localhost\Ubuntu\home\harrison\Workplace\workspaces\ksl\cache\1-100\NIA_SL_WORD0001_REAL02_F.npy')
 if not p.exists():
     raise FileNotFoundError(p)
 print("Resolved path:", p)
