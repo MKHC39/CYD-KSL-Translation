@@ -519,52 +519,139 @@ def save_jsonl(
             }
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
-def jsonpull(path: Path):
-    #path = r"~/Workplace/workspaces/수어 재난 데이터/114.재난 안전 정보 전달을 위한 수어영상 데이터/01.데이터/2.Validation/라벨링데이터/03_JSON_VL/1.tact_morpheme/1.자연재난/COLDWAVE/1_1/NIA_SL_G1_COLDWAVE000032_1_TW07.json"
-    spath = sp(path, strict=True)
-
-
-    def iter_json(path: Path):
-        folders = {p.parent for p in spath.rglob("*.json")}
-        for folder in sorted(folders):
-            yield folder
-
-    for folder in iter_json(spath):
-        files = folder.glob("*.json")
-
-        for f in files:
-            with f.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-
-            parse_json(file)
-
-
-def parse_json(data: Any):
-    segments = []
-    nms_data = data["nms_script"]
-    sign_data = data["sign_script"]
-
-    def get_segments(data: dict):
-        segments = []
-        for key, value in data.items():
-            if value:
-                for segment in value:
-                    # display(segment)
-                    if "descriptor" in segment.keys():
-                        if segment['descriptor']:
-                            segments.append(segment)
-                    elif "gloss_id" in segment.keys():
-                        segments.append(
-                            {"end": segment["end"], "start": segment["start"], "descriptor": segment["gloss_id"]})
+def _extract_json_segments(script: Any) -> list[dict[str, Any]]:
+    segments: list[dict[str, Any]] = []
+    if not isinstance(script, dict):
         return segments
 
-    segments += get_segments(nms_data)
-    segments += get_segments(sign_data)
+    for value in script.values():
+        if not value:
+            continue
+        if isinstance(value, list):
+            iterable = value
+        elif isinstance(value, dict):
+            iterable = value.values()
+        else:
+            continue
+
+        for segment in iterable:
+            if not isinstance(segment, dict):
+                continue
+            gloss = segment.get("descriptor")
+            if gloss is None or (isinstance(gloss, str) and not gloss.strip()):
+                gloss = segment.get("gloss_id")
+
+            start = segment.get("start")
+            end = segment.get("end")
+            try:
+                start = float(start)
+                end = float(end)
+            except (TypeError, ValueError):
+                continue
+
+            segments.append({"gloss": gloss, "start": start, "end": end})
 
     return segments
 
-def sort_json(segments: list[dict]):
+
+def parse_json_data(data: dict[str, Any]) -> tuple[Optional[str], list[dict[str, Any]]]:
+    sentence = data.get("sentence")
+    if sentence is None:
+        sentence = data.get("korean_text")
+
+    segments = []
+    segments.extend(_extract_json_segments(data.get("nms_script", {})))
+    segments.extend(_extract_json_segments(data.get("sign_script", {})))
     segments.sort(key=lambda x: x["start"])
+
+    return sentence, segments
+
+
+def json_folder_df(folder: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    meta_rows: list[tuple[int, Optional[str], str]] = []
+    seg_rows: list[tuple[int, Optional[str], Optional[str], float, float, int]] = []
+
+    entry_id = 0
+    for f in sorted(folder.glob("*.json")):
+        with f.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        sentence, segments = parse_json_data(data)
+        meta_rows.append((entry_id, sentence, f.name))
+
+        for ord_idx, segment in enumerate(segments):
+            seg_rows.append(
+                (entry_id, None, segment.get("gloss"), segment["start"], segment["end"], ord_idx)
+            )
+
+        entry_id += 1
+
+    meta_df = pd.DataFrame(meta_rows, columns=["entry_id", "sentence", "json"])
+    segments_df = pd.DataFrame(
+        seg_rows, columns=["entry_id", "label", "gloss", "start", "end", "ord"]
+    )
+
+    return meta_df, segments_df
+
+
+def iter_json_folders(root: Path):
+    folders = {p.parent for p in root.rglob("*.json")}
+    for folder in sorted(folders):
+        yield folder
+
+
+def merge_json_outputs(root: Path, *, verbose: bool = True):
+    meta_parts = []
+    seg_parts = []
+
+    next_id = 0
+    folders_done = 0
+
+    for folder in iter_json_folders(root):
+        meta_df, segments_df = json_folder_df(folder)
+
+        if meta_df.empty and segments_df.empty:
+            continue
+
+        meta_df = meta_df.copy()
+        segments_df = segments_df.copy()
+        meta_df["entry_id"] = meta_df["entry_id"].astype(int)
+        segments_df["entry_id"] = segments_df["entry_id"].astype(int)
+
+        local_ids = meta_df["entry_id"].unique()
+        id_map = {int(lid): int(next_id + i) for i, lid in enumerate(sorted(local_ids))}
+        next_id += len(id_map)
+
+        meta_df["entry_id"] = meta_df["entry_id"].map(id_map)
+        segments_df["entry_id"] = segments_df["entry_id"].map(id_map)
+
+        meta_df["source_folder"] = str(folder)
+        segments_df["source_folder"] = str(folder)
+
+        meta_parts.append(meta_df)
+        seg_parts.append(segments_df)
+
+        folders_done += 1
+        if verbose:
+            json_count = len(list(folder.glob("*.json")))
+            print(
+                f"[{folders_done:04d}] done: {folder} | "
+                f"json={json_count} | "
+                f"meta_rows={len(meta_df)} | "
+                f"seg_rows={len(segments_df)} | "
+                f"global_ids_now={next_id}"
+            )
+
+    meta_all = pd.concat(meta_parts, ignore_index=True) if meta_parts else pd.DataFrame()
+    seg_all = pd.concat(seg_parts, ignore_index=True) if seg_parts else pd.DataFrame()
+
+    if verbose:
+        print(
+            f"\nFinished. folders={folders_done} | "
+            f"meta_all={len(meta_all)} | seg_all={len(seg_all)}"
+        )
+
+    return meta_all, seg_all
 
 
 
@@ -572,18 +659,32 @@ if __name__ == "__main__":
     win_path = input("Please enter your Windows path: ")
     root = sp(win_path)
 
-    meta_all, seg_all, drops_all = merge_folder_outputs(root)
+    mode = input("Mode [xlsx/json] (default: xlsx): ").strip().lower() or "xlsx"
 
-    merged_dict = sent_gloss(meta_all, seg_all)
+    if mode == "json":
+        meta_all, seg_all = merge_json_outputs(root)
+        merged_dict = sent_gloss(meta_all, seg_all)
 
-    # Save
-    base = Path(__file__).resolve().parent
-    out_path = base / "training_sentence_gloss.jsonl"
-    serialisable = {str(k): [v[0], v[1]] for k, v in merged_dict.items()}
+        base = Path(__file__).resolve().parent
+        out_path = base / "training_sentence_gloss_json.jsonl"
+        serialisable = {str(k): [v[0], v[1]] for k, v in merged_dict.items()}
 
-    save_jsonl(merged_dict, out_path)
+        save_jsonl(merged_dict, out_path)
 
-    print(f"meta_all rows: {len(meta_all)}")
-    print(f"seg_all rows:  {len(seg_all)}")
-    print(f"drops_all rows:{len(drops_all)}")
-    print(f"Saved {len(serialisable)} entries to: {out_path}")
+        print(f"meta_all rows: {len(meta_all)}")
+        print(f"seg_all rows:  {len(seg_all)}")
+        print(f"Saved {len(serialisable)} entries to: {out_path}")
+    else:
+        meta_all, seg_all, drops_all = merge_folder_outputs(root)
+        merged_dict = sent_gloss(meta_all, seg_all)
+
+        base = Path(__file__).resolve().parent
+        out_path = base / "training_sentence_gloss.jsonl"
+        serialisable = {str(k): [v[0], v[1]] for k, v in merged_dict.items()}
+
+        save_jsonl(merged_dict, out_path)
+
+        print(f"meta_all rows: {len(meta_all)}")
+        print(f"seg_all rows:  {len(seg_all)}")
+        print(f"drops_all rows:{len(drops_all)}")
+        print(f"Saved {len(serialisable)} entries to: {out_path}")

@@ -52,6 +52,16 @@ This converts the mp4 files into a cache of stacked tensor ndarrys with label id
 
 Tool [`preprocessing/read_npy.py`](preprocessing/read_npy.py) is provided to check the data of the generated npy files.
 
+the used dataset is not included in this repository due to its size.
+
+프로젝트에서 사용한 데이터는 사용한 미니컴퓨터의 확인하실수 있습니다
+- NIASLG1: `home/harrison/Workplace/workspaces/수어 재난 데이터`
+- NIASL2021: separate external hard drive
+- cached files used for training:
+  - NIASL2021: `ksl/cache/`
+  - NIASLG1: `ksl/preprocessing/cache/`
+ 
+
 ## Training Model
 1. Change [`/configs/KSL.yaml`](configs/KSL.yaml) task value to "islr" for ISLR dataset, anything else for CLSR.
 2. run ```python main.py```
