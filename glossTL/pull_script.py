@@ -519,6 +519,54 @@ def save_jsonl(
             }
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
+def jsonpull(path: Path):
+    #path = r"~/Workplace/workspaces/수어 재난 데이터/114.재난 안전 정보 전달을 위한 수어영상 데이터/01.데이터/2.Validation/라벨링데이터/03_JSON_VL/1.tact_morpheme/1.자연재난/COLDWAVE/1_1/NIA_SL_G1_COLDWAVE000032_1_TW07.json"
+    spath = sp(path, strict=True)
+
+
+    def iter_json(path: Path):
+        folders = {p.parent for p in spath.rglob("*.json")}
+        for folder in sorted(folders):
+            yield folder
+
+    for folder in iter_json(spath):
+        files = folder.glob("*.json")
+
+        for f in files:
+            with f.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+
+            parse_json(file)
+
+
+def parse_json(data: Any):
+    segments = []
+    nms_data = data["nms_script"]
+    sign_data = data["sign_script"]
+
+    def get_segments(data: dict):
+        segments = []
+        for key, value in data.items():
+            if value:
+                for segment in value:
+                    # display(segment)
+                    if "descriptor" in segment.keys():
+                        if segment['descriptor']:
+                            segments.append(segment)
+                    elif "gloss_id" in segment.keys():
+                        segments.append(
+                            {"end": segment["end"], "start": segment["start"], "descriptor": segment["gloss_id"]})
+        return segments
+
+    segments += get_segments(nms_data)
+    segments += get_segments(sign_data)
+
+    return segments
+
+def sort_json(segments: list[dict]):
+    segments.sort(key=lambda x: x["start"])
+
+
 
 if __name__ == "__main__":
     win_path = input("Please enter your Windows path: ")
